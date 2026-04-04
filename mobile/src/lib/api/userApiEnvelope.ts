@@ -1,0 +1,59 @@
+import type { AuthUser, LoginSession } from "@/lib/api/authTypes";
+
+export type UserApiEnvelope = {
+  errorCode: number;
+  data?: {
+    access_token?: string;
+    refresh_token?: string;
+    user?: AuthUser;
+  };
+  message?: string;
+};
+
+export function parseUserApiJson(text: string, res: Response): UserApiEnvelope {
+  let body: unknown;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  if (!res.ok) {
+    throw new Error(text || `HTTP ${res.status}`);
+  }
+  if (!body || typeof body !== "object") {
+    throw new Error("Invalid response");
+  }
+  return body as UserApiEnvelope;
+}
+
+export function assertUserApiSuccess(env: UserApiEnvelope): void {
+  if (env.errorCode !== 0) {
+    throw new Error(env.message?.trim() || `Request failed (errorCode ${env.errorCode})`);
+  }
+}
+
+export function sessionFromEnvelope(env: UserApiEnvelope): LoginSession | null {
+  const d = env.data;
+  if (!d) return null;
+  if (
+    typeof d.access_token !== "string" ||
+    typeof d.refresh_token !== "string" ||
+    !d.user ||
+    typeof d.user !== "object"
+  ) {
+    return null;
+  }
+  return {
+    accessToken: d.access_token,
+    refreshToken: d.refresh_token,
+    user: d.user,
+  };
+}
+
+export function requireSessionFromEnvelope(env: UserApiEnvelope): LoginSession {
+  const s = sessionFromEnvelope(env);
+  if (!s) {
+    throw new Error("Login response missing data");
+  }
+  return s;
+}
