@@ -3,11 +3,13 @@ import type { AuthUser, LoginSession } from "@/lib/api/authTypes";
 export type UserApiEnvelope = {
   errorCode: number;
   data?: {
+    event_id?: number;
     access_token?: string;
     refresh_token?: string;
     user?: AuthUser;
-  };
+  } | null;
   message?: string;
+  detail?: string;
 };
 
 export function parseUserApiJson(text: string, res: Response): UserApiEnvelope {

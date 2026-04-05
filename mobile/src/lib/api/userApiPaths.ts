@@ -2,3 +2,5 @@
 export const USER_LOGIN_PATH = "/api/user/login";
 
 export const USER_REGISTER_PATH = "/api/user/register";
+
+export const USER_REGISTER_VERIFY_PATH = "/api/user/register/verify";
