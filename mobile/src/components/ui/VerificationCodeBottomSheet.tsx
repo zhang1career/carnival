@@ -10,34 +10,45 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
+import { TextField } from "@/components/ui/TextField";
 
 const DEFAULT_LENGTH = 6;
+
+export type VerificationSheetSubmitPayload = {
+  code: string;
+  newPassword?: string;
+};
 
 export type VerificationCodeBottomSheetProps = {
   visible: boolean;
   onClose: () => void;
-  /** Return a rejected Promise or throw to show the error under the input. */
-  onSubmitCode: (code: string) => void | Promise<void>;
+  onSubmit: (payload: VerificationSheetSubmitPayload) => void | Promise<void>;
   title?: string;
   description?: string;
   submitLabel?: string;
   /** Defaults to 6. */
   codeLength?: number;
+  /** When set, shows a secure field and passes `newPassword` in the submit payload. */
+  requireNewPassword?: boolean;
+  newPasswordLabel?: string;
 };
 
 export function VerificationCodeBottomSheet({
   visible,
   onClose,
-  onSubmitCode,
+  onSubmit,
   title = "Enter verification code",
   description = "Enter the 6-digit code we sent to you.",
   submitLabel = "Confirm",
   codeLength = DEFAULT_LENGTH,
+  requireNewPassword = false,
+  newPasswordLabel = "New password",
 }: VerificationCodeBottomSheetProps) {
   const insets = useSafeAreaInsets();
   const mountedRef = useRef(true);
   const inputRef = useRef<TextInput>(null);
   const [code, setCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -51,6 +62,7 @@ export function VerificationCodeBottomSheet({
   useEffect(() => {
     if (visible) {
       setCode("");
+      setNewPassword("");
       setError(null);
       setSubmitting(false);
       const t = setTimeout(() => inputRef.current?.focus(), 280);
@@ -58,14 +70,19 @@ export function VerificationCodeBottomSheet({
     }
   }, [visible]);
 
-  const canSubmit = code.length === codeLength && !submitting;
+  const passwordOk = !requireNewPassword || newPassword.trim().length > 0;
+  const canSubmit = code.length === codeLength && passwordOk && !submitting;
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
     setError(null);
     setSubmitting(true);
     try {
-      await onSubmitCode(code);
+      await onSubmit(
+        requireNewPassword
+          ? { code, newPassword: newPassword.trim() }
+          : { code },
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -128,11 +145,21 @@ export function VerificationCodeBottomSheet({
                 accessibilityLabel="Verification code"
               />
             </Pressable>
+            {requireNewPassword ? (
+              <TextField
+                label={newPasswordLabel}
+                secureTextEntry
+                value={newPassword}
+                onChangeText={setNewPassword}
+                editable={!submitting}
+                className="mt-4"
+              />
+            ) : null}
             {error ? <Text className="text-red-400 text-sm mt-2">{error}</Text> : null}
             <Button
-              title={submitting ? "Verifying…" : submitLabel}
+              title={submitting ? "Submitting…" : submitLabel}
               className="mt-5"
-              disabled={code.length !== codeLength || submitting}
+              disabled={!canSubmit}
               onPress={handleSubmit}
             />
             <Button title="Cancel" variant="ghost" className="mt-2" onPress={onClose} disabled={submitting} />

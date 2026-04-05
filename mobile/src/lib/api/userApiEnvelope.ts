@@ -12,6 +12,22 @@ export type UserApiEnvelope = {
   detail?: string;
 };
 
+export function optionalEventIdFromData(data: UserApiEnvelope["data"]): number | undefined {
+  if (!data || typeof data !== "object") {
+    return undefined;
+  }
+  const id = (data as { event_id?: unknown }).event_id;
+  return typeof id === "number" ? id : undefined;
+}
+
+export function requireEventIdFromData(data: UserApiEnvelope["data"], missingMessage: string): number {
+  const id = optionalEventIdFromData(data);
+  if (id === undefined) {
+    throw new Error(missingMessage);
+  }
+  return id;
+}
+
 export function parseUserApiJson(text: string, res: Response): UserApiEnvelope {
   let body: unknown;
   try {

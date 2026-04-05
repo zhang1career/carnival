@@ -6,7 +6,7 @@ import { Alert, Text, View } from "react-native";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { VerificationCodeBottomSheet } from "@/components/ui/VerificationCodeBottomSheet";
-import { RegisterPendingError, registerAccount, verifyRegisterCode } from "@/lib/api/register";
+import { PendingVerificationError, registerAccount, verifyRegisterCode } from "@/lib/api/register";
 import { useToast } from "@/lib/notifications/toast";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -70,8 +70,8 @@ export default function SignUpScreen() {
             setPendingEventId(eventId);
             setVerifyOpen(true);
           } catch (e) {
-            if (e instanceof RegisterPendingError) {
-              const title = "Registration pending";
+            if (e instanceof PendingVerificationError) {
+              const title = "Verification pending";
               if (e.eventId != null) {
                 setPendingEventId(e.eventId);
                 Alert.alert(title, e.message, [
@@ -101,7 +101,7 @@ export default function SignUpScreen() {
         onClose={() => setVerifyOpen(false)}
         title="Verify your account"
         description="Enter the 6-digit verification code we sent you."
-        onSubmitCode={async (code) => {
+        onSubmit={async ({ code }) => {
           if (pendingEventId == null) {
             throw new Error("Registration session expired. Please sign up again.");
           }
