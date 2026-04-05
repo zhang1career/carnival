@@ -3,12 +3,30 @@ import type { AuthUser, LoginSession } from "@/lib/api/authTypes";
 export type UserApiEnvelope = {
   errorCode: number;
   data?: {
+    event_id?: number;
     access_token?: string;
     refresh_token?: string;
     user?: AuthUser;
-  };
+  } | null;
   message?: string;
+  detail?: string;
 };
+
+export function optionalEventIdFromData(data: UserApiEnvelope["data"]): number | undefined {
+  if (!data || typeof data !== "object") {
+    return undefined;
+  }
+  const id = (data as { event_id?: unknown }).event_id;
+  return typeof id === "number" ? id : undefined;
+}
+
+export function requireEventIdFromData(data: UserApiEnvelope["data"], missingMessage: string): number {
+  const id = optionalEventIdFromData(data);
+  if (id === undefined) {
+    throw new Error(missingMessage);
+  }
+  return id;
+}
 
 export function parseUserApiJson(text: string, res: Response): UserApiEnvelope {
   let body: unknown;

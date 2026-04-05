@@ -37,6 +37,12 @@ module.exports = {
     extra: {
       router: { origin: false },
       apiBaseUrl: process.env.API_BASE_URL,
+      tokenRefreshIntervalMs: (() => {
+        const raw = process.env.TOKEN_REFRESH_INTERVAL_MS;
+        if (raw == null || String(raw).trim() === "") return undefined;
+        const n = Number.parseInt(String(raw), 10);
+        return Number.isFinite(n) && n > 0 ? n : undefined;
+      })(),
       features: {
         commerce: true,
         feed: true,

@@ -24,3 +24,20 @@ export async function loginWithPassword(loginKey: string, password: string): Pro
   assertUserApiSuccess(env);
   return requireSessionFromEnvelope(env);
 }
+
+/** `PUT .../api/user/login` with `{ refresh_token }`; response shape matches password login. */
+export async function refreshSessionWithRefreshToken(refreshToken: string): Promise<LoginSession> {
+  const base = apiBaseUrl.replace(/\/$/, "");
+  if (!base) {
+    throw new Error("Missing API_BASE_URL in project root .env");
+  }
+  const res = await fetch(`${base}${USER_LOGIN_PATH}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+  const text = await res.text();
+  const env = parseUserApiJson(text, res);
+  assertUserApiSuccess(env);
+  return requireSessionFromEnvelope(env);
+}

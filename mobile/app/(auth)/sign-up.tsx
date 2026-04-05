@@ -2,14 +2,18 @@ import { useRouter } from "expo-router";
 
 export const options = { title: "Create account" };
 import { useState } from "react";
-import { Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
-import { registerAccount } from "@/lib/api/register";
+import { VerificationCodeBottomSheet } from "@/components/ui/VerificationCodeBottomSheet";
+import { PendingVerificationError, registerAccount, verifyRegisterCode } from "@/lib/api/register";
 import { useToast } from "@/lib/notifications/toast";
 import { useAuthStore } from "@/stores/authStore";
 
 const NOTICE_CHANNEL_EMAIL = "email";
+
+/** Wait for the modal to dismiss before navigating — avoids native crashes when routing while Modal is visible. */
+const NAV_DELAY_MS = 280;
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -19,8 +23,15 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
-  const [noticeTarget, setNoticeTarget] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [verifyOpen, setVerifyOpen] = useState(false);
+  /** Set when register returns `event_id` (success or pending); kept after closing the sheet so user can reopen. */
+  const [pendingEventId, setPendingEventId] = useState<number | null>(null);
+
+  const openVerifySheet = () => {
+    if (pendingEventId == null) return;
+    setVerifyOpen(true);
+  };
 
   return (
     <View className="flex-1 px-6 pt-4">
@@ -35,35 +46,69 @@ export default function SignUpScreen() {
       />
       <TextField label="Password" secureTextEntry value={password} onChangeText={setPassword} />
       <TextField label="Phone" keyboardType="phone-pad" value={phone} onChangeText={setPhone} />
-      <TextField
-        label="Notice target"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={noticeTarget}
-        onChangeText={setNoticeTarget}
-        placeholder="Defaults to email if empty"
-      />
       <Button
         title={submitting ? "Signing up…" : "Sign up"}
         disabled={submitting}
         className="mt-2"
         onPress={async () => {
           if (submitting) return;
-          const target = noticeTarget.trim() || email.trim();
-          if (!username.trim() || !email.trim() || !password || !phone.trim() || !target) {
-            toast.show("Fill username, email, password, phone, and notice target (or leave target empty to use email).");
+          const emailTrim = email.trim();
+          if (!username.trim() || !emailTrim || !password || !phone.trim()) {
+            toast.show("Fill username, email, password, and phone.");
             return;
           }
           setSubmitting(true);
           try {
-            const session = await registerAccount({
+            const { eventId } = await registerAccount({
               username: username.trim(),
               password,
-              email: email.trim(),
+              email: emailTrim,
               phone: phone.trim(),
               noticeChannel: NOTICE_CHANNEL_EMAIL,
-              noticeTarget: target,
+              noticeTarget: emailTrim,
             });
+            setPendingEventId(eventId);
+            setVerifyOpen(true);
+          } catch (e) {
+            if (e instanceof PendingVerificationError) {
+              const title = "Verification pending";
+              if (e.eventId != null) {
+                setPendingEventId(e.eventId);
+                Alert.alert(title, e.message, [
+                  { text: "Later", style: "cancel" },
+                  { text: "Enter code", onPress: () => setVerifyOpen(true) },
+                ]);
+              } else {
+                Alert.alert(
+                  title,
+                  `${e.message}\n\nIf you already received a code, try again later or follow the instructions in your email.`,
+                  [{ text: "OK" }],
+                );
+              }
+            } else {
+              toast.show(e instanceof Error ? e.message : "Sign up failed");
+            }
+          } finally {
+            setSubmitting(false);
+          }
+        }}
+      />
+      {pendingEventId != null ? (
+        <Button title="Enter verification code" variant="ghost" className="mt-2" onPress={openVerifySheet} />
+      ) : null}
+      <VerificationCodeBottomSheet
+        visible={verifyOpen}
+        onClose={() => setVerifyOpen(false)}
+        title="Verify your account"
+        description="Enter the 6-digit verification code we sent you."
+        onSubmit={async ({ code }) => {
+          if (pendingEventId == null) {
+            throw new Error("Registration session expired. Please sign up again.");
+          }
+          const session = await verifyRegisterCode(pendingEventId, code);
+          setPendingEventId(null);
+          setVerifyOpen(false);
+          setTimeout(() => {
             if (session) {
               signIn(session);
               toast.show("Welcome!");
@@ -72,11 +117,7 @@ export default function SignUpScreen() {
               toast.show("Account created. Please sign in.");
               router.replace("/(auth)/login");
             }
-          } catch (e) {
-            toast.show(e instanceof Error ? e.message : "Sign up failed");
-          } finally {
-            setSubmitting(false);
-          }
+          }, NAV_DELAY_MS);
         }}
       />
     </View>
