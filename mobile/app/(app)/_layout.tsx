@@ -14,6 +14,10 @@ export default function AppGroupLayout() {
         options={{ headerShown: true, title: "Product", headerBackTitle: "Back" }}
       />
       <Stack.Screen
+        name="order/[id]"
+        options={{ headerShown: true, title: "Order", headerBackTitle: "Back" }}
+      />
+      <Stack.Screen
         name="checkout"
         options={{ headerShown: true, title: "Checkout", headerBackTitle: "Back" }}
       />

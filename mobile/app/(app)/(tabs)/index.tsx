@@ -6,14 +6,24 @@ import { CartBar } from "@/components/app/CartBar";
 import { ProductCard } from "@/components/app/ProductCard";
 import { AppModal } from "@/components/ui/AppModal";
 import { Button } from "@/components/ui/Button";
-import { useProductsQuery } from "@/features/catalog/hooks";
+import { useProductsInfiniteQuery } from "@/features/catalog/hooks";
 import { features } from "@/lib/config";
 import { useToast } from "@/lib/notifications/toast";
 
 export default function ShopHomeScreen() {
   const router = useRouter();
   const toast = useToast();
-  const { data, isPending, isError, refetch, isRefetching } = useProductsQuery();
+  const {
+    data,
+    isPending,
+    isError,
+    refetch,
+    isRefetching,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useProductsInfiniteQuery();
+  const rows = data?.pages.flatMap((p) => p.items) ?? [];
   const [promoOpen, setPromoOpen] = useState(false);
 
   if (!features.commerce) {
@@ -31,8 +41,19 @@ export default function ShopHomeScreen() {
         <Button title="Promo" variant="ghost" className="py-2 px-3" onPress={() => setPromoOpen(true)} />
       </View>
       <FlatList
-        data={data ?? []}
+        data={rows}
         keyExtractor={(item) => item.id}
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+        }}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <View className="py-4 items-center">
+              <ActivityIndicator color="#a5b4fc" />
+            </View>
+          ) : null
+        }
         numColumns={2}
         columnWrapperStyle={{ justifyContent: "space-between", paddingHorizontal: 16 }}
         ListHeaderComponent={

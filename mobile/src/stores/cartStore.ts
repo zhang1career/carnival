@@ -32,7 +32,7 @@ export const useCartStore = create<CartState>((set, get) => ({
         {
           productId: product.id,
           title: product.title,
-          priceCents: product.priceCents,
+          priceCents: product.priceCents ?? 0,
           qty,
         },
       ],

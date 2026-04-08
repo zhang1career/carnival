@@ -8,12 +8,13 @@ import { useProductsQuery } from "@/features/catalog/hooks";
 export default function CommerceRecipeScreen() {
   const router = useRouter();
   const { data, isPending, isError } = useProductsQuery();
+  const items = data?.items ?? [];
 
   return (
     <View className="flex-1 bg-surface pt-4">
       <Text className="text-lg font-semibold text-slate-100 px-4 mb-2">Recipe: commerce</Text>
       <FlatList
-        data={data ?? []}
+        data={items}
         keyExtractor={(item) => item.id}
         numColumns={2}
         columnWrapperStyle={{ justifyContent: "space-between", paddingHorizontal: 16 }}

@@ -34,12 +34,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="media"
+        name="orders"
         options={{
-          title: "Media",
-          href: features.media ? undefined : null,
+          title: "Orders",
+          href: features.orders ? undefined : null,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="play-circle-outline" color={color} size={size} />
+            <Ionicons name="receipt-outline" color={color} size={size} />
           ),
         }}
       />

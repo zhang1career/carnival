@@ -12,7 +12,7 @@ export type { AuthUser, LoginSession } from "@/lib/api/authTypes";
 export async function loginWithPassword(loginKey: string, password: string): Promise<LoginSession> {
   const base = apiBaseUrl.replace(/\/$/, "");
   if (!base) {
-    throw new Error("Missing API_BASE_URL in project root .env");
+    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
   }
   const res = await fetch(`${base}${USER_LOGIN_PATH}`, {
     method: "POST",
@@ -29,7 +29,7 @@ export async function loginWithPassword(loginKey: string, password: string): Pro
 export async function refreshSessionWithRefreshToken(refreshToken: string): Promise<LoginSession> {
   const base = apiBaseUrl.replace(/\/$/, "");
   if (!base) {
-    throw new Error("Missing API_BASE_URL in project root .env");
+    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
   }
   const res = await fetch(`${base}${USER_LOGIN_PATH}`, {
     method: "PUT",

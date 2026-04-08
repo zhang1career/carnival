@@ -8,6 +8,12 @@ const products: Product[] = [
     priceCents: 19900,
     imageUrl: "https://picsum.photos/seed/p1/400/400",
     description: "Closed-back, comfortable for long sessions.",
+    mainMediaKeys: [
+      "https://picsum.photos/seed/p1a/800/500",
+      "https://picsum.photos/seed/p1b/800/500",
+    ],
+    extMediaKeys: ["https://picsum.photos/seed/p1x/800/400", "https://picsum.photos/seed/p1y/800/400"],
+    stockQuantity: 12,
   },
   {
     id: "2",
@@ -15,6 +21,9 @@ const products: Product[] = [
     priceCents: 14900,
     imageUrl: "https://picsum.photos/seed/p2/400/400",
     description: "Hot-swappable switches, compact 75% layout.",
+    mainMediaKeys: ["https://picsum.photos/seed/p2a/800/500"],
+    extMediaKeys: ["https://picsum.photos/seed/p2x/800/400"],
+    stockQuantity: 4,
   },
   {
     id: "3",
@@ -22,6 +31,8 @@ const products: Product[] = [
     priceCents: 5900,
     imageUrl: "https://picsum.photos/seed/p3/400/400",
     description: "HDMI, SD, and three USB-A ports.",
+    mainMediaKeys: ["https://picsum.photos/seed/p3a/800/500"],
+    stockQuantity: 0,
   },
 ];
 
@@ -45,8 +56,22 @@ function delay<T>(value: T, ms = 280): Promise<T> {
 }
 
 export const mockCommerceRepository: CommerceRepository = {
-  async listProducts() {
-    return delay([...products]);
+  async listProducts(params = {}) {
+    const page = params.page ?? 1;
+    const perPage = params.per_page ?? 15;
+    const all = [...products];
+    const start = (page - 1) * perPage;
+    const items = all.slice(start, start + perPage);
+    const lastPage = Math.max(1, Math.ceil(all.length / perPage));
+    return delay({
+      items,
+      pagination: {
+        total: all.length,
+        per_page: perPage,
+        current_page: page,
+        last_page: lastPage,
+      },
+    });
   },
   async getProduct(id: string) {
     return delay(products.find((p) => p.id === id) ?? null);
