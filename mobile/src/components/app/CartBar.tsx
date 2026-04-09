@@ -19,7 +19,7 @@ export function CartBar({ onCheckout }: Props) {
         onPress={onCheckout}
         className="bg-brand px-4 py-2 rounded-lg active:opacity-90"
       >
-        <Text className="text-white font-semibold text-sm">Checkout</Text>
+        <Text className="text-white font-semibold text-sm">Cart</Text>
       </Pressable>
     </View>
   );

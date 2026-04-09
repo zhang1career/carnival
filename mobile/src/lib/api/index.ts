@@ -1,7 +1,7 @@
 import type { CommerceRepository } from "./commerceRepo";
-import { mockCommerceRepository } from "./mockCommerce";
+import { createDefaultCommerceRepository } from "./mallCommerce";
 
-let repo: CommerceRepository = mockCommerceRepository;
+let repo: CommerceRepository = createDefaultCommerceRepository();
 
 export function getCommerceRepo(): CommerceRepository {
   return repo;

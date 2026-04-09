@@ -25,7 +25,7 @@ export async function requestPasswordReset(
 ): Promise<RequestPasswordResetResult> {
   const base = apiBaseUrl.replace(/\/$/, "");
   if (!base) {
-    throw new Error("Missing API_BASE_URL in project root .env");
+    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
   }
   const res = await fetch(`${base}${USER_RESET_PASSWORD_PATH}`, {
     method: "POST",
@@ -61,7 +61,7 @@ export type VerifyResetPasswordParams = {
 export async function verifyResetPassword(params: VerifyResetPasswordParams): Promise<void> {
   const base = apiBaseUrl.replace(/\/$/, "");
   if (!base) {
-    throw new Error("Missing API_BASE_URL in project root .env");
+    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
   }
   const res = await fetch(`${base}${USER_RESET_PASSWORD_VERIFY_PATH}`, {
     method: "POST",

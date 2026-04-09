@@ -32,7 +32,7 @@ export type RegisterResult = {
 export async function registerAccount(params: RegisterParams): Promise<RegisterResult> {
   const base = apiBaseUrl.replace(/\/$/, "");
   if (!base) {
-    throw new Error("Missing API_BASE_URL in project root .env");
+    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
   }
   const form = new FormData();
   form.append("username", params.username);
@@ -66,7 +66,7 @@ export async function registerAccount(params: RegisterParams): Promise<RegisterR
 export async function verifyRegisterCode(eventId: number, code: string): Promise<LoginSession | null> {
   const base = apiBaseUrl.replace(/\/$/, "");
   if (!base) {
-    throw new Error("Missing API_BASE_URL in project root .env");
+    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
   }
   const res = await fetch(`${base}${USER_REGISTER_VERIFY_PATH}`, {
     method: "POST",
