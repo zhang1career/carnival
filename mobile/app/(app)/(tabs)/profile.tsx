@@ -1,14 +1,16 @@
 import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button } from "@/components/ui/Button";
 import { useAuthStore } from "@/stores/authStore";
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, signOut } = useAuthStore();
 
   return (
-    <View className="flex-1 bg-surface px-4 pt-4">
+    <View className="flex-1 bg-surface px-4" style={{ paddingTop: insets.top + 16 }}>
       <Text className="text-xl font-bold text-slate-100 mb-6">Profile</Text>
       <View className="bg-surface-card border border-surface-border rounded-xl p-4 mb-4">
         <Text className="text-slate-500 text-xs">Signed in as</Text>

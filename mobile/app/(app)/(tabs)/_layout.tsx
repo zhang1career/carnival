@@ -17,6 +17,7 @@ export default function TabLayout() {
         name="index"
         options={{
           title: "Shop",
+          headerShown: false,
           href: features.commerce ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="bag-handle-outline" color={color} size={size} />
@@ -26,7 +27,8 @@ export default function TabLayout() {
       <Tabs.Screen
         name="cart"
         options={{
-          title: "购物车",
+          title: "Cart",
+          headerShown: false,
           href: features.cart ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cart-outline" color={color} size={size} />
@@ -37,6 +39,8 @@ export default function TabLayout() {
         name="orders"
         options={{
           title: "Orders",
+          /** Nested `orders/[id]` stack: hide tab header so there is no Back row; list uses in-screen title. */
+          headerShown: false,
           href: features.orders ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="receipt-outline" color={color} size={size} />
@@ -47,6 +51,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: "Profile",
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-circle-outline" color={color} size={size} />
           ),

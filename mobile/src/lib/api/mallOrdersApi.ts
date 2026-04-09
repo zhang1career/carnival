@@ -132,6 +132,14 @@ function toOrderSummary(row: Record<string, unknown>): OrderSummary {
   };
 }
 
+function optionalTrimmedString(value: unknown): string | undefined {
+  if (typeof value !== "string") {
+    return undefined;
+  }
+  const t = value.trim();
+  return t === "" ? undefined : t;
+}
+
 function toOrderLine(row: unknown): OrderDetail["lines"][number] {
   if (!row || typeof row !== "object" || Array.isArray(row)) {
     throw new Error("Malformed order line");
@@ -143,7 +151,19 @@ function toOrderLine(row: unknown): OrderDetail["lines"][number] {
   if (pid === null || quantity === null || unit_price === null) {
     throw new Error("Malformed order line fields");
   }
-  return { pid, quantity, unit_price: Math.round(unit_price) };
+  const title = optionalTrimmedString(
+    r.title ?? r.product_title ?? r.name ?? r.product_name,
+  );
+  const thumbnail = optionalTrimmedString(
+    r.thumbnail ?? r.thumb ?? r.image ?? r.image_url ?? r.product_thumbnail,
+  );
+  return {
+    pid,
+    quantity,
+    unit_price: Math.round(unit_price),
+    ...(title !== undefined ? { title } : {}),
+    ...(thumbnail !== undefined ? { thumbnail } : {}),
+  };
 }
 
 function toOrderDetail(data: Record<string, unknown>): OrderDetail {

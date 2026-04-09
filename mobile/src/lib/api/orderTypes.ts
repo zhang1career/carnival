@@ -24,6 +24,9 @@ export type OrderLine = {
   pid: number;
   quantity: number;
   unit_price: number;
+  /** Present when the order API embeds product copy on each line. */
+  title?: string;
+  thumbnail?: string;
 };
 
 export type OrderSummary = {

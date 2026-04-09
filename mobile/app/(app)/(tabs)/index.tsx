@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ActivityIndicator, FlatList, RefreshControl, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BannerCarousel } from "@/components/app/BannerCarousel";
 import { CartBar } from "@/components/app/CartBar";
 import { ProductCard } from "@/components/app/ProductCard";
@@ -12,6 +13,7 @@ import { useToast } from "@/lib/notifications/toast";
 
 export default function ShopHomeScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const toast = useToast();
   const {
     data,
@@ -28,14 +30,14 @@ export default function ShopHomeScreen() {
 
   if (!features.commerce) {
     return (
-      <View className="flex-1 items-center justify-center px-6">
+      <View className="flex-1 items-center justify-center px-6" style={{ paddingTop: insets.top }}>
         <Text className="text-slate-300 text-center">Commerce is off in app.json extra.features.</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-surface pt-2">
+    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top + 8 }}>
       <View className="px-4 flex-row justify-between items-center mb-2">
         <Text className="text-xl font-bold text-slate-100">Discover</Text>
         <Button title="Promo" variant="ghost" className="py-2 px-3" onPress={() => setPromoOpen(true)} />

@@ -76,7 +76,7 @@ export default function CartScreen() {
 
   if (!features.cart) {
     return (
-      <View className="flex-1 items-center justify-center px-6">
+      <View className="flex-1 items-center justify-center px-6" style={{ paddingTop: insets.top }}>
         <Text className="text-slate-300 text-center">购物车已在应用配置中关闭。</Text>
       </View>
     );
@@ -86,8 +86,8 @@ export default function CartScreen() {
 
   return (
     <View className="flex-1 bg-surface">
-      <View className="px-4 pt-4 pb-2">
-        <Text className="text-xl font-bold text-slate-100">购物车</Text>
+      <View className="px-4 pb-2" style={{ paddingTop: insets.top + 16 }}>
+        <Text className="text-xl font-bold text-slate-100">Cart</Text>
       </View>
 
       <FlatList

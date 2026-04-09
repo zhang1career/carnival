@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useOrdersInfiniteQuery } from "@/features/orders/hooks";
 import { orderStatusLabel } from "@/lib/api/orderTypes";
 import { features } from "@/lib/config";
@@ -25,6 +26,7 @@ function formatTime(sec: number): string {
 
 export default function OrdersScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const {
     data,
     isPending,
@@ -40,14 +42,14 @@ export default function OrdersScreen() {
 
   if (!features.orders) {
     return (
-      <View className="flex-1 items-center justify-center px-6">
+      <View className="flex-1 items-center justify-center px-6" style={{ paddingTop: insets.top }}>
         <Text className="text-slate-300 text-center">Orders tab is off in app config features.</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-surface pt-2">
+    <View className="flex-1 bg-surface" style={{ paddingTop: insets.top + 8 }}>
       <Text className="text-xl font-bold text-slate-100 px-4 mb-2">Orders</Text>
       <FlatList
         data={rows}

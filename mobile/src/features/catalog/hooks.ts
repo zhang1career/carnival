@@ -26,10 +26,11 @@ export function useProductsInfiniteQuery(perPage: number = DEFAULT_PER_PAGE) {
   });
 }
 
-export function useProductQuery(id: string) {
+export function useProductQuery(id: string, options?: { enabled?: boolean }) {
+  const enabled = options?.enabled !== false;
   return useQuery({
     queryKey: ["product", id],
     queryFn: () => getCommerceRepo().getProduct(id),
-    enabled: !!id,
+    enabled: enabled && !!id,
   });
 }

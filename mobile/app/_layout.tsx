@@ -20,7 +20,9 @@ export default function RootLayout() {
                 headerTitleStyle: { fontWeight: "600" },
                 contentStyle: { backgroundColor: "#0f172a" },
               }}
-            />
+            >
+              <Stack.Screen name="(app)" options={{ headerShown: false }} />
+            </Stack>
           </ToastProvider>
         </QueryClientProvider>
       </SafeAreaProvider>
