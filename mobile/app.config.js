@@ -1,6 +1,22 @@
 const path = require("path");
 
-require("dotenv").config({ path: path.resolve(__dirname, "..", ".env") });
+require("dotenv").config({
+  path: path.resolve(__dirname, "..", ".env"),
+  // dotenv v17 logs to stdout by default; that breaks CocoaPods parsing JSON from `expo-modules-autolinking`.
+  quiet: true,
+});
+
+/** @param {string} name */
+function envTrim(name) {
+  const v = process.env[name];
+  if (v == null || String(v).trim() === "") return undefined;
+  return String(v).trim();
+}
+
+const APP_DISPLAY_NAME = envTrim("APP_DISPLAY_NAME");
+const APP_VERSION = envTrim("APP_VERSION");
+const APP_MODULE_NAME = envTrim("APP_MODULE_NAME");
+const BUNDLE_ID = envTrim("BUNDLE_ID");
 
 /** `API_BASE_URL` (no port) + port env → origin string. @returns {string | undefined} */
 function originWithPort(apiBase, portRaw) {
@@ -35,9 +51,13 @@ function mallCdnBaseUrlFromEnv() {
 /** @type {import('@expo/config').ExpoConfig} */
 module.exports = {
   expo: {
-    name: "Platform Scaffold",
+    /**
+     * Expo prebuild names the iOS Xcode project / `ios/<Name>/` from `sanitizedName(expo.name)`.
+     * Home-screen label uses `APP_DISPLAY_NAME` via `ios/scripts/sync-ios-metadata-from-env.sh`.
+     */
+    name: APP_MODULE_NAME ?? "Platform Scaffold",
     slug: "platform-scaffold",
-    version: "1.0.0",
+    version: APP_VERSION ?? "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "platformscaffold",
@@ -50,7 +70,7 @@ module.exports = {
     assetBundlePatterns: ["**/*"],
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.example.platformscaffold",
+      bundleIdentifier: BUNDLE_ID ?? "com.example.platformscaffold",
     },
     android: {
       adaptiveIcon: {
@@ -63,7 +83,7 @@ module.exports = {
       bundler: "metro",
       favicon: "./assets/images/favicon.png",
     },
-    plugins: ["expo-router"],
+    plugins: ["expo-router", "./plugins/withIosEnvSyncPodfile.js"],
     extra: {
       router: { origin: false },
       apiBaseUrl: userAggBaseUrlFromEnv(),
