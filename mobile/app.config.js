@@ -79,7 +79,7 @@ module.exports = {
       })(),
       features: {
         commerce: true,
-        feed: true,
+        cart: true,
         orders: true,
       },
     },

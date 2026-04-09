@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { Button } from "@/components/ui/Button";
 import { useOrderQuery } from "@/features/orders/hooks";
+import { orderStatusLabel } from "@/lib/api/orderTypes";
 
 function formatMinor(n: number): string {
   return `$${(n / 100).toFixed(2)}`;
@@ -55,7 +56,9 @@ export default function OrderDetailScreen() {
   return (
     <ScrollView className="flex-1 bg-surface" contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
       <Text className="text-2xl font-bold text-slate-100">Order #{order.id}</Text>
-      <Text className="text-slate-400 mt-2 capitalize">Status: {order.status}</Text>
+      <Text className="text-slate-400 mt-2 capitalize">
+        Status: {orderStatusLabel(order.status)}
+      </Text>
       <Text className="text-brand-muted text-lg mt-2">{formatMinor(order.total_price)}</Text>
       <Text className="text-slate-500 text-sm mt-4">Created: {formatTime(order.ct)}</Text>
       <Text className="text-slate-500 text-sm">Updated: {formatTime(order.ut)}</Text>

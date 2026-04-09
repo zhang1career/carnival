@@ -1,10 +1,11 @@
-import type { LoginSession } from "@/lib/api/authTypes";
+import type { AuthUser, LoginSession } from "@/lib/api/authTypes";
 import { apiBaseUrl } from "@/lib/config";
 import { USER_LOGIN_PATH } from "@/lib/api/userApiPaths";
 import {
   assertUserApiSuccess,
   parseUserApiJson,
   requireSessionFromEnvelope,
+  requireSessionFromEnvelopeWithUserFallback,
 } from "@/lib/api/userApiEnvelope";
 
 export type { AuthUser, LoginSession } from "@/lib/api/authTypes";
@@ -25,8 +26,14 @@ export async function loginWithPassword(loginKey: string, password: string): Pro
   return requireSessionFromEnvelope(env);
 }
 
-/** `PUT .../api/user/login` with `{ refresh_token }`; response shape matches password login. */
-export async function refreshSessionWithRefreshToken(refreshToken: string): Promise<LoginSession> {
+/**
+ * `PUT .../api/user/login` with `{ refresh_token }`.
+ * Pass `existingUser` so a token-only refresh response can still build a full session.
+ */
+export async function refreshSessionWithRefreshToken(
+  refreshToken: string,
+  existingUser: AuthUser | null,
+): Promise<LoginSession> {
   const base = apiBaseUrl.replace(/\/$/, "");
   if (!base) {
     throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
@@ -39,5 +46,5 @@ export async function refreshSessionWithRefreshToken(refreshToken: string): Prom
   const text = await res.text();
   const env = parseUserApiJson(text, res);
   assertUserApiSuccess(env);
-  return requireSessionFromEnvelope(env);
+  return requireSessionFromEnvelopeWithUserFallback(env, existingUser);
 }

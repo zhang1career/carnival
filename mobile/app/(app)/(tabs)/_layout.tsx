@@ -24,12 +24,12 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="feed"
+        name="cart"
         options={{
-          title: "Feed",
-          href: features.feed ? undefined : null,
+          title: "购物车",
+          href: features.cart ? undefined : null,
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="newspaper-outline" color={color} size={size} />
+            <Ionicons name="cart-outline" color={color} size={size} />
           ),
         }}
       />

@@ -81,7 +81,7 @@ export default function ShopHomeScreen() {
         )}
         contentContainerStyle={{ paddingBottom: 120 }}
       />
-      <CartBar onCheckout={() => router.push("/(app)/checkout")} />
+      <CartBar onCheckout={() => router.push("/(app)/(tabs)/cart")} />
       <AppModal visible={promoOpen} title="Promotion" onClose={() => setPromoOpen(false)}>
         <Text className="text-slate-300 text-sm leading-6">
           Generic modal shell — campaigns, terms, or forced updates.

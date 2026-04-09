@@ -10,7 +10,7 @@ type Extra = {
   tokenRefreshIntervalMs?: number;
   features?: {
     commerce?: boolean;
-    feed?: boolean;
+    cart?: boolean;
     orders?: boolean;
   };
 };
@@ -33,6 +33,6 @@ export const tokenRefreshIntervalMs: number | null = (() => {
 
 export const features = {
   commerce: extra.features?.commerce !== false,
-  feed: extra.features?.feed !== false,
+  cart: extra.features?.cart !== false,
   orders: extra.features?.orders !== false,
 };

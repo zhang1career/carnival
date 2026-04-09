@@ -1,5 +1,5 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ActivityIndicator,
@@ -26,6 +26,7 @@ const FLOAT_BAR_EXTRA = 56;
 
 export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const add = useCartStore((s) => s.add);
@@ -132,19 +133,28 @@ export default function ProductDetailScreen() {
       </ScrollView>
 
       <View
-        className="absolute left-0 right-0 border-t border-surface-border bg-surface"
+        className="absolute left-0 right-0 border-t border-surface-border bg-surface px-3"
         style={{ bottom: 0, paddingBottom: insets.bottom }}
       >
-        <Pressable
-          accessibilityLabel="Add to cart"
-          className="items-center justify-center py-4 active:opacity-80"
-          onPress={() => {
-            add(product);
-            toast.show("Added to cart");
-          }}
-        >
-          <Ionicons name="cart-outline" size={28} color="#a5b4fc" />
-        </Pressable>
+        <View className="flex-row items-stretch py-2 gap-2">
+          <Pressable
+            accessibilityLabel="加入购物车"
+            className="flex-1 bg-brand rounded-xl py-3.5 px-4 items-center justify-center active:opacity-90"
+            onPress={() => {
+              add(product);
+              toast.show("已加入购物车");
+            }}
+          >
+            <Text className="text-white font-semibold text-base">加入购物车</Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel="打开购物车"
+            className="w-14 items-center justify-center rounded-xl border border-surface-border bg-surface-card active:opacity-80"
+            onPress={() => router.push("/(app)/(tabs)/cart")}
+          >
+            <Ionicons name="cart-outline" size={26} color="#a5b4fc" />
+          </Pressable>
+        </View>
       </View>
     </View>
   );

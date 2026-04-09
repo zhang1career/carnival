@@ -1,4 +1,24 @@
-export type OrderStatus = "pending" | "paid" | "cancelled";
+/** Mall aggregate: `0` pending, `1` paid, `2` cancelled. */
+export type OrderStatus = 0 | 1 | 2;
+
+export const ORDER_STATUS_PENDING = 0 as const;
+export const ORDER_STATUS_PAID = 1 as const;
+export const ORDER_STATUS_CANCELLED = 2 as const;
+
+export function orderStatusLabel(status: OrderStatus): string {
+  switch (status) {
+    case ORDER_STATUS_PENDING:
+      return "pending";
+    case ORDER_STATUS_PAID:
+      return "paid";
+    case ORDER_STATUS_CANCELLED:
+      return "cancelled";
+    default: {
+      const _exhaustive: never = status;
+      return String(_exhaustive);
+    }
+  }
+}
 
 export type OrderLine = {
   pid: number;

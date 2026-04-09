@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { useOrdersInfiniteQuery } from "@/features/orders/hooks";
+import { orderStatusLabel } from "@/lib/api/orderTypes";
 import { features } from "@/lib/config";
 
 function formatMinor(n: number): string {
@@ -89,7 +90,9 @@ export default function OrdersScreen() {
           >
             <Text className="text-slate-100 font-semibold">Order #{item.id}</Text>
             <Text className="text-brand-muted text-sm mt-1">{formatMinor(item.total_price)}</Text>
-            <Text className="text-slate-400 text-xs mt-1 capitalize">{item.status}</Text>
+            <Text className="text-slate-400 text-xs mt-1 capitalize">
+              {orderStatusLabel(item.status)}
+            </Text>
             <Text className="text-slate-500 text-xs mt-2">{formatTime(item.ct)}</Text>
           </Pressable>
         )}

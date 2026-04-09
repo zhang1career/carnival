@@ -75,3 +75,30 @@ export function requireSessionFromEnvelope(env: UserApiEnvelope): LoginSession {
   }
   return s;
 }
+
+/**
+ * Like {@link requireSessionFromEnvelope}, but if `data.user` is absent (some refresh endpoints only
+ * return new tokens), uses `fallbackUser`.
+ */
+export function requireSessionFromEnvelopeWithUserFallback(
+  env: UserApiEnvelope,
+  fallbackUser: AuthUser | null,
+): LoginSession {
+  const d = env.data;
+  if (!d) {
+    throw new Error("Login response missing data");
+  }
+  if (typeof d.access_token !== "string" || typeof d.refresh_token !== "string") {
+    throw new Error("Login response missing data");
+  }
+  const user =
+    d.user && typeof d.user === "object" ? d.user : fallbackUser;
+  if (!user || typeof user !== "object") {
+    throw new Error("Login response missing data");
+  }
+  return {
+    accessToken: d.access_token,
+    refreshToken: d.refresh_token,
+    user,
+  };
+}
