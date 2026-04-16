@@ -43,6 +43,7 @@ export default function RootLayout() {
                 contentStyle: { backgroundColor: "#0f172a" },
               }}
             >
+              <Stack.Screen name="(auth)" options={{ title: "" }} />
               <Stack.Screen name="(app)" options={{ headerShown: false }} />
             </Stack>
           </ToastProvider>

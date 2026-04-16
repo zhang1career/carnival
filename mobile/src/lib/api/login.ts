@@ -6,13 +6,14 @@ import {
   requireSessionFromEnvelope,
   requireSessionFromEnvelopeWithUserFallback,
 } from "@/lib/api/userApiEnvelope";
+import { fetchWithHttpDebug } from "@/lib/httpDebug";
 import { getServiceOrigins } from "@/lib/serviceOrigins";
 
 export type { AuthUser, LoginSession } from "@/lib/api/authTypes";
 
 export async function loginWithPassword(loginKey: string, password: string): Promise<LoginSession> {
   const { userAggBaseUrl: base } = await getServiceOrigins();
-  const res = await fetch(`${base}${USER_LOGIN_PATH}`, {
+  const res = await fetchWithHttpDebug(`${base}${USER_LOGIN_PATH}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ login_key: loginKey, password }),
@@ -24,7 +25,7 @@ export async function loginWithPassword(loginKey: string, password: string): Pro
 }
 
 /**
- * `PUT .../api/user/login` with `{ refresh_token }`.
+ * `PUT .../api/user-agg/login` with `{ refresh_token }`.
  * Pass `existingUser` so a token-only refresh response can still build a full session.
  */
 export async function refreshSessionWithRefreshToken(
@@ -32,7 +33,7 @@ export async function refreshSessionWithRefreshToken(
   existingUser: AuthUser | null,
 ): Promise<LoginSession> {
   const { userAggBaseUrl: base } = await getServiceOrigins();
-  const res = await fetch(`${base}${USER_LOGIN_PATH}`, {
+  const res = await fetchWithHttpDebug(`${base}${USER_LOGIN_PATH}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh_token: refreshToken }),

@@ -4,6 +4,7 @@ import { MALL_PRODUCTS_PATH, MALL_PRODUCTS_SEARCH_PATH, mallProductPath } from "
 import { normalizeProductPagination } from "./mallPagination";
 import type { Product } from "./types";
 import { mockCommerceRepository } from "./mockCommerce";
+import { fetchWithHttpDebug } from "@/lib/httpDebug";
 import { getServiceOrigins } from "@/lib/serviceOrigins";
 
 type CmsProductRecord = Record<string, unknown>;
@@ -60,7 +61,7 @@ async function fetchMallProductsPage(
     page: String(page),
     per_page: String(perPage),
   });
-  const res = await fetch(`${base}${MALL_PRODUCTS_PATH}?${qs.toString()}`, {
+  const res = await fetchWithHttpDebug(`${base}${MALL_PRODUCTS_PATH}?${qs.toString()}`, {
     method: "GET",
     headers: { Accept: "application/json" },
   });
@@ -129,7 +130,7 @@ async function postMallProductSearch(base: string, query: string): Promise<strin
   if (!trimmed) {
     return [];
   }
-  const res = await fetch(`${base}${MALL_PRODUCTS_SEARCH_PATH}`, {
+  const res = await fetchWithHttpDebug(`${base}${MALL_PRODUCTS_SEARCH_PATH}`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -151,7 +152,7 @@ async function fetchMallProduct(base: string, id: string): Promise<Product | nul
   if (!Number.isFinite(numId) || numId < 1) {
     return null;
   }
-  const res = await fetch(`${base}${mallProductPath(numId)}`, {
+  const res = await fetchWithHttpDebug(`${base}${mallProductPath(numId)}`, {
     method: "GET",
     headers: { Accept: "application/json" },
   });

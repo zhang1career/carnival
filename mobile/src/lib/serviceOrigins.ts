@@ -5,8 +5,9 @@ import {
   mallAggPort,
   mallCdnBaseUrlOverride,
   servFdPort,
-  userAggPort,
+  apiGatewayPort,
 } from "@/lib/config";
+import { fetchWithHttpDebug } from "@/lib/httpDebug";
 
 type ConfigHostEnvelope = {
   errorCode?: number;
@@ -48,7 +49,7 @@ async function fetchConfigHost(): Promise<string> {
   const accessKey = requiredEnv("API_CONFIG_ACCESS_KEY", apiConfigAccessKey);
   const key = requiredEnv("API_CONFIG_PUBLIC_KEY", apiConfigPublicKey);
   console.log("[serviceOrigins] request config host", { url });
-  const res = await fetch(url, {
+  const res = await fetchWithHttpDebug(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ access_key: accessKey, key }),
@@ -71,7 +72,7 @@ async function fetchConfigHost(): Promise<string> {
 
 async function createOrigins(): Promise<ServiceOrigins> {
   const host = await fetchConfigHost();
-  const userBase = toHttpOrigin(host, requiredEnv("USER_AGG_PORT", userAggPort));
+  const userBase = toHttpOrigin(host, requiredEnv("API_GATEWAY_PORT", apiGatewayPort));
   const mallBase = toHttpOrigin(host, requiredEnv("MALL_AGG_PORT", mallAggPort));
   const servFdBase = toHttpOrigin(host, requiredEnv("SERV_FD_PORT", servFdPort));
   return {

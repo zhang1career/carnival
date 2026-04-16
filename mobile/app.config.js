@@ -70,7 +70,7 @@ module.exports = {
       apiConfigPublicUrl: envTrim("API_CONFIG_PUBLIC_URL"),
       apiConfigPublicKey: envTrim("API_CONFIG_PUBLIC_KEY"),
       apiConfigAccessKey: envTrim("API_CONFIG_ACCESS_KEY"),
-      userAggPort: envTrim("USER_AGG_PORT"),
+      apiGatewayPort: envTrim("API_GATEWAY_PORT"),
       mallAggPort: envTrim("MALL_AGG_PORT"),
       servFdPort: envTrim("SERV_FD_PORT"),
       mallCdnBaseUrl: envTrim("MALL_CDN_BASE_URL"),
@@ -85,6 +85,7 @@ module.exports = {
         cart: true,
         orders: true,
       },
+      logLevel: envTrim("APP_LOG_LEVEL") ?? (process.env.NODE_ENV === "production" ? "info" : "debug"),
     },
   },
 };

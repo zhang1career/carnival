@@ -4,7 +4,7 @@ type Extra = {
   apiConfigPublicUrl?: string;
   apiConfigPublicKey?: string;
   apiConfigAccessKey?: string;
-  userAggPort?: string;
+  apiGatewayPort?: string;
   mallAggPort?: string;
   servFdPort?: string;
   mallCdnBaseUrl?: string;
@@ -14,6 +14,7 @@ type Extra = {
     cart?: boolean;
     orders?: boolean;
   };
+  logLevel?: string;
 };
 
 const extra = (Constants.expoConfig?.extra ?? {}) as Extra;
@@ -25,7 +26,7 @@ function readTrimmed(value: string | undefined): string {
 export const apiConfigPublicUrl = readTrimmed(extra.apiConfigPublicUrl);
 export const apiConfigPublicKey = readTrimmed(extra.apiConfigPublicKey);
 export const apiConfigAccessKey = readTrimmed(extra.apiConfigAccessKey);
-export const userAggPort = readTrimmed(extra.userAggPort);
+export const apiGatewayPort = readTrimmed(extra.apiGatewayPort);
 export const mallAggPort = readTrimmed(extra.mallAggPort);
 export const servFdPort = readTrimmed(extra.servFdPort);
 export const mallCdnBaseUrlOverride = readTrimmed(extra.mallCdnBaseUrl);
@@ -41,3 +42,15 @@ export const features = {
   cart: extra.features?.cart !== false,
   orders: extra.features?.orders !== false,
 };
+
+export type AppLogLevel = "debug" | "info" | "warn" | "error";
+
+function parseLogLevel(value: string | undefined): AppLogLevel {
+  const normalized = (value ?? "").trim().toLowerCase();
+  if (normalized === "debug") return "debug";
+  if (normalized === "warn") return "warn";
+  if (normalized === "error") return "error";
+  return "info";
+}
+
+export const appLogLevel: AppLogLevel = parseLogLevel(extra.logLevel);

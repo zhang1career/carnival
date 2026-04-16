@@ -8,6 +8,7 @@ import {
   PendingVerificationError,
 } from "@/lib/api/pendingVerificationError";
 import { USER_RESET_PASSWORD_PATH, USER_RESET_PASSWORD_VERIFY_PATH } from "@/lib/api/userApiPaths";
+import { fetchWithHttpDebug } from "@/lib/httpDebug";
 import { getServiceOrigins } from "@/lib/serviceOrigins";
 
 export type RequestPasswordResetParams = {
@@ -19,12 +20,12 @@ export type RequestPasswordResetResult = {
   eventId: number;
 };
 
-/** `POST .../api/user/reset-password` with JSON `{ notice_channel, notice_target }`. */
+/** `POST .../api/user-agg/reset-password` with JSON `{ notice_channel, notice_target }`. */
 export async function requestPasswordReset(
   params: RequestPasswordResetParams,
 ): Promise<RequestPasswordResetResult> {
   const { userAggBaseUrl: base } = await getServiceOrigins();
-  const res = await fetch(`${base}${USER_RESET_PASSWORD_PATH}`, {
+  const res = await fetchWithHttpDebug(`${base}${USER_RESET_PASSWORD_PATH}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -54,10 +55,10 @@ export type VerifyResetPasswordParams = {
   newPassword: string;
 };
 
-/** `POST .../api/user/reset-password/verify` with JSON `{ event_id, code, new_password }`. */
+/** `POST .../api/user-agg/reset-password/verify` with JSON `{ event_id, code, new_password }`. */
 export async function verifyResetPassword(params: VerifyResetPasswordParams): Promise<void> {
   const { userAggBaseUrl: base } = await getServiceOrigins();
-  const res = await fetch(`${base}${USER_RESET_PASSWORD_VERIFY_PATH}`, {
+  const res = await fetchWithHttpDebug(`${base}${USER_RESET_PASSWORD_VERIFY_PATH}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

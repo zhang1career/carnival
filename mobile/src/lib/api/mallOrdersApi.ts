@@ -2,6 +2,7 @@ import { assertMallSuccess, readMallEnvelope, requireMallObjectData } from "./ma
 import { MALL_ORDERS_PATH, mallOrderPath } from "./mallPaths";
 import { normalizeOrderPagination } from "./mallPagination";
 import type { OrderDetail, OrderListResult, OrderStatus, OrderSummary } from "./orderTypes";
+import { fetchWithHttpDebug } from "@/lib/httpDebug";
 import { getServiceOrigins } from "@/lib/serviceOrigins";
 
 async function mallBaseOrThrow(): Promise<string> {
@@ -184,7 +185,7 @@ export async function fetchMallOrdersPage(
     page: String(page),
     per_page: String(perPage),
   });
-  const res = await fetch(`${base}${MALL_ORDERS_PATH}?${qs.toString()}`, {
+  const res = await fetchWithHttpDebug(`${base}${MALL_ORDERS_PATH}?${qs.toString()}`, {
     method: "GET",
     headers: authHeaders(accessToken),
   });
@@ -230,7 +231,7 @@ export async function createMallOrder(
   lines: CreateMallOrderLine[],
 ): Promise<number> {
   const base = await mallBaseOrThrow();
-  const res = await fetch(`${base}${MALL_ORDERS_PATH}`, {
+  const res = await fetchWithHttpDebug(`${base}${MALL_ORDERS_PATH}`, {
     method: "POST",
     headers: {
       ...authHeaders(accessToken),
@@ -256,7 +257,7 @@ export async function fetchMallOrder(accessToken: string, orderId: string): Prom
   if (!Number.isFinite(numId) || numId < 1) {
     return null;
   }
-  const res = await fetch(`${base}${mallOrderPath(numId)}`, {
+  const res = await fetchWithHttpDebug(`${base}${mallOrderPath(numId)}`, {
     method: "GET",
     headers: authHeaders(accessToken),
   });

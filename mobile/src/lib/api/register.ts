@@ -10,6 +10,7 @@ import {
   PendingVerificationError,
 } from "@/lib/api/pendingVerificationError";
 import { USER_REGISTER_PATH, USER_REGISTER_VERIFY_PATH } from "@/lib/api/userApiPaths";
+import { fetchWithHttpDebug } from "@/lib/httpDebug";
 import { getServiceOrigins } from "@/lib/serviceOrigins";
 
 export { PENDING_VERIFICATION_ERROR_CODE, PendingVerificationError } from "@/lib/api/pendingVerificationError";
@@ -28,7 +29,7 @@ export type RegisterResult = {
   session: LoginSession | null;
 };
 
-/** `multipart/form-data` to `POST .../api/user/register`. */
+/** `multipart/form-data` to `POST .../api/user-agg/register`. */
 export async function registerAccount(params: RegisterParams): Promise<RegisterResult> {
   const { userAggBaseUrl: base } = await getServiceOrigins();
   const form = new FormData();
@@ -38,7 +39,7 @@ export async function registerAccount(params: RegisterParams): Promise<RegisterR
   form.append("phone", params.phone);
   form.append("notice_channel", params.noticeChannel);
   form.append("notice_target", params.noticeTarget);
-  const res = await fetch(`${base}${USER_REGISTER_PATH}`, {
+  const res = await fetchWithHttpDebug(`${base}${USER_REGISTER_PATH}`, {
     method: "POST",
     body: form,
   });
@@ -59,10 +60,10 @@ export async function registerAccount(params: RegisterParams): Promise<RegisterR
   };
 }
 
-/** `POST .../api/user/register/verify` with JSON body `{ event_id, code }`. */
+/** `POST .../api/user-agg/register/verify` with JSON body `{ event_id, code }`. */
 export async function verifyRegisterCode(eventId: number, code: string): Promise<LoginSession | null> {
   const { userAggBaseUrl: base } = await getServiceOrigins();
-  const res = await fetch(`${base}${USER_REGISTER_VERIFY_PATH}`, {
+  const res = await fetchWithHttpDebug(`${base}${USER_REGISTER_VERIFY_PATH}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ event_id: eventId, code }),
