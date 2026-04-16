@@ -1,5 +1,4 @@
 import type { AuthUser, LoginSession } from "@/lib/api/authTypes";
-import { apiBaseUrl } from "@/lib/config";
 import { USER_LOGIN_PATH } from "@/lib/api/userApiPaths";
 import {
   assertUserApiSuccess,
@@ -7,14 +6,12 @@ import {
   requireSessionFromEnvelope,
   requireSessionFromEnvelopeWithUserFallback,
 } from "@/lib/api/userApiEnvelope";
+import { getServiceOrigins } from "@/lib/serviceOrigins";
 
 export type { AuthUser, LoginSession } from "@/lib/api/authTypes";
 
 export async function loginWithPassword(loginKey: string, password: string): Promise<LoginSession> {
-  const base = apiBaseUrl.replace(/\/$/, "");
-  if (!base) {
-    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
-  }
+  const { userAggBaseUrl: base } = await getServiceOrigins();
   const res = await fetch(`${base}${USER_LOGIN_PATH}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -34,10 +31,7 @@ export async function refreshSessionWithRefreshToken(
   refreshToken: string,
   existingUser: AuthUser | null,
 ): Promise<LoginSession> {
-  const base = apiBaseUrl.replace(/\/$/, "");
-  if (!base) {
-    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
-  }
+  const { userAggBaseUrl: base } = await getServiceOrigins();
   const res = await fetch(`${base}${USER_LOGIN_PATH}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },

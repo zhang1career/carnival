@@ -1,4 +1,3 @@
-import { apiBaseUrl } from "@/lib/config";
 import {
   optionalEventIdFromData,
   parseUserApiJson,
@@ -9,6 +8,7 @@ import {
   PendingVerificationError,
 } from "@/lib/api/pendingVerificationError";
 import { USER_RESET_PASSWORD_PATH, USER_RESET_PASSWORD_VERIFY_PATH } from "@/lib/api/userApiPaths";
+import { getServiceOrigins } from "@/lib/serviceOrigins";
 
 export type RequestPasswordResetParams = {
   noticeChannel: string;
@@ -23,10 +23,7 @@ export type RequestPasswordResetResult = {
 export async function requestPasswordReset(
   params: RequestPasswordResetParams,
 ): Promise<RequestPasswordResetResult> {
-  const base = apiBaseUrl.replace(/\/$/, "");
-  if (!base) {
-    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
-  }
+  const { userAggBaseUrl: base } = await getServiceOrigins();
   const res = await fetch(`${base}${USER_RESET_PASSWORD_PATH}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -59,10 +56,7 @@ export type VerifyResetPasswordParams = {
 
 /** `POST .../api/user/reset-password/verify` with JSON `{ event_id, code, new_password }`. */
 export async function verifyResetPassword(params: VerifyResetPasswordParams): Promise<void> {
-  const base = apiBaseUrl.replace(/\/$/, "");
-  if (!base) {
-    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
-  }
+  const { userAggBaseUrl: base } = await getServiceOrigins();
   const res = await fetch(`${base}${USER_RESET_PASSWORD_VERIFY_PATH}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

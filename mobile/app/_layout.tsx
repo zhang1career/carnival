@@ -1,12 +1,34 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ToastProvider } from "@/lib/notifications/toast";
+import { initServiceOrigins } from "@/lib/serviceOrigins";
 
 export default function RootLayout() {
   const queryClient = useMemo(() => new QueryClient(), []);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    initServiceOrigins()
+      .catch((err) => {
+        console.error("initServiceOrigins failed", err);
+      })
+      .finally(() => {
+        if (mounted) {
+          setReady(true);
+        }
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  if (!ready) {
+    return null;
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#0f172a" }}>

@@ -1,4 +1,3 @@
-import { apiBaseUrl } from "@/lib/config";
 import {
   optionalEventIdFromData,
   parseUserApiJson,
@@ -11,6 +10,7 @@ import {
   PendingVerificationError,
 } from "@/lib/api/pendingVerificationError";
 import { USER_REGISTER_PATH, USER_REGISTER_VERIFY_PATH } from "@/lib/api/userApiPaths";
+import { getServiceOrigins } from "@/lib/serviceOrigins";
 
 export { PENDING_VERIFICATION_ERROR_CODE, PendingVerificationError } from "@/lib/api/pendingVerificationError";
 
@@ -30,10 +30,7 @@ export type RegisterResult = {
 
 /** `multipart/form-data` to `POST .../api/user/register`. */
 export async function registerAccount(params: RegisterParams): Promise<RegisterResult> {
-  const base = apiBaseUrl.replace(/\/$/, "");
-  if (!base) {
-    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
-  }
+  const { userAggBaseUrl: base } = await getServiceOrigins();
   const form = new FormData();
   form.append("username", params.username);
   form.append("password", params.password);
@@ -64,10 +61,7 @@ export async function registerAccount(params: RegisterParams): Promise<RegisterR
 
 /** `POST .../api/user/register/verify` with JSON body `{ event_id, code }`. */
 export async function verifyRegisterCode(eventId: number, code: string): Promise<LoginSession | null> {
-  const base = apiBaseUrl.replace(/\/$/, "");
-  if (!base) {
-    throw new Error("Missing user aggregate base (API_BASE_URL + USER_AGG_PORT) in .env");
-  }
+  const { userAggBaseUrl: base } = await getServiceOrigins();
   const res = await fetch(`${base}${USER_REGISTER_VERIFY_PATH}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

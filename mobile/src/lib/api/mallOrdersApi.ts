@@ -2,14 +2,11 @@ import { assertMallSuccess, readMallEnvelope, requireMallObjectData } from "./ma
 import { MALL_ORDERS_PATH, mallOrderPath } from "./mallPaths";
 import { normalizeOrderPagination } from "./mallPagination";
 import type { OrderDetail, OrderListResult, OrderStatus, OrderSummary } from "./orderTypes";
-import { mallAggBaseUrl } from "@/lib/config";
+import { getServiceOrigins } from "@/lib/serviceOrigins";
 
-function mallBaseOrThrow(): string {
-  const base = mallAggBaseUrl.replace(/\/$/, "");
-  if (!base) {
-    throw new Error("Missing mallAggBaseUrl (API_BASE_URL + MALL_AGG_PORT)");
-  }
-  return base;
+async function mallBaseOrThrow(): Promise<string> {
+  const { mallAggBaseUrl } = await getServiceOrigins();
+  return mallAggBaseUrl.replace(/\/$/, "");
 }
 
 function authHeaders(accessToken: string): HeadersInit {
@@ -180,7 +177,7 @@ export async function fetchMallOrdersPage(
   accessToken: string,
   params?: { page?: number; per_page?: number },
 ): Promise<OrderListResult> {
-  const base = mallBaseOrThrow();
+  const base = await mallBaseOrThrow();
   const page = params?.page ?? 1;
   const perPage = params?.per_page ?? 15;
   const qs = new URLSearchParams({
@@ -232,7 +229,7 @@ export async function createMallOrder(
   accessToken: string,
   lines: CreateMallOrderLine[],
 ): Promise<number> {
-  const base = mallBaseOrThrow();
+  const base = await mallBaseOrThrow();
   const res = await fetch(`${base}${MALL_ORDERS_PATH}`, {
     method: "POST",
     headers: {
@@ -254,7 +251,7 @@ export async function createMallOrder(
 }
 
 export async function fetchMallOrder(accessToken: string, orderId: string): Promise<OrderDetail | null> {
-  const base = mallBaseOrThrow();
+  const base = await mallBaseOrThrow();
   const numId = Number.parseInt(orderId, 10);
   if (!Number.isFinite(numId) || numId < 1) {
     return null;

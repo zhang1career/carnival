@@ -6,6 +6,17 @@ require("dotenv").config({
   quiet: true,
 });
 
+const RUN_ENV = (process.env.RUN_ENV || "").trim();
+if (RUN_ENV === "dev" || RUN_ENV === "test" || RUN_ENV === "prod") {
+  require("dotenv").config({
+    path: path.resolve(__dirname, "..", `.env.${RUN_ENV}`),
+    override: true,
+    quiet: true,
+  });
+  // RUN_ENV only comes from `.env`; ignore any RUN_ENV in `.env.{env}`.
+  process.env.RUN_ENV = RUN_ENV;
+}
+
 /** @param {string} name */
 function envTrim(name) {
   const v = process.env[name];
@@ -17,36 +28,6 @@ const APP_DISPLAY_NAME = envTrim("APP_DISPLAY_NAME");
 const APP_VERSION = envTrim("APP_VERSION");
 const APP_MODULE_NAME = envTrim("APP_MODULE_NAME");
 const BUNDLE_ID = envTrim("BUNDLE_ID");
-
-/** `API_BASE_URL` (no port) + port env → origin string. @returns {string | undefined} */
-function originWithPort(apiBase, portRaw) {
-  if (apiBase == null || String(apiBase).trim() === "") return undefined;
-  if (portRaw == null || String(portRaw).trim() === "") return undefined;
-  try {
-    const u = new URL(String(apiBase).trim());
-    u.port = String(portRaw).trim();
-    return u.toString().replace(/\/$/, "");
-  } catch {
-    return undefined;
-  }
-}
-
-/** User aggregate API: `API_BASE_URL` + `USER_AGG_PORT`. */
-function userAggBaseUrlFromEnv() {
-  return originWithPort(process.env.API_BASE_URL, process.env.USER_AGG_PORT);
-}
-
-/** Mall aggregate API: `API_BASE_URL` + `MALL_AGG_PORT`. */
-function mallAggBaseUrlFromEnv() {
-  return originWithPort(process.env.API_BASE_URL, process.env.MALL_AGG_PORT);
-}
-
-/** Static / CDN origin for thumbnails: `API_BASE_URL` + `SERV_FD_PORT` + `/api/cdn/2020-05-31/d/1`. */
-function mallCdnBaseUrlFromEnv() {
-  const origin = originWithPort(process.env.API_BASE_URL, process.env.SERV_FD_PORT);
-  if (!origin) return undefined;
-  return `${origin}/api/cdn/2020-05-31/d/1`;
-}
 
 /** @type {import('@expo/config').ExpoConfig} */
 module.exports = {
@@ -86,11 +67,13 @@ module.exports = {
     plugins: ["expo-router", "./plugins/withIosEnvSyncPodfile.js"],
     extra: {
       router: { origin: false },
-      apiBaseUrl: userAggBaseUrlFromEnv(),
-      mallAggBaseUrl: mallAggBaseUrlFromEnv(),
-      mallCdnBaseUrl:
-        (process.env.MALL_CDN_BASE_URL && String(process.env.MALL_CDN_BASE_URL).trim()) ||
-        mallCdnBaseUrlFromEnv(),
+      apiConfigPublicUrl: envTrim("API_CONFIG_PUBLIC_URL"),
+      apiConfigPublicKey: envTrim("API_CONFIG_PUBLIC_KEY"),
+      apiConfigAccessKey: envTrim("API_CONFIG_ACCESS_KEY"),
+      userAggPort: envTrim("USER_AGG_PORT"),
+      mallAggPort: envTrim("MALL_AGG_PORT"),
+      servFdPort: envTrim("SERV_FD_PORT"),
+      mallCdnBaseUrl: envTrim("MALL_CDN_BASE_URL"),
       tokenRefreshIntervalMs: (() => {
         const raw = process.env.TOKEN_REFRESH_INTERVAL_MS;
         if (raw == null || String(raw).trim() === "") return undefined;

@@ -1,4 +1,4 @@
-/** Appended to user aggregate `apiBaseUrl` (`API_BASE_URL` + `USER_AGG_PORT`). */
+/** Appended to user aggregate origin (`http://{host}:{USER_AGG_PORT}`). */
 export const USER_LOGIN_PATH = "/api/user/login";
 
 export const USER_REGISTER_PATH = "/api/user/register";
