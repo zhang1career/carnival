@@ -45,15 +45,14 @@ function toHttpOrigin(host: string, port: string): string {
 }
 
 async function fetchConfigHost(): Promise<string> {
-  const url = requiredEnv("API_CONFIG_PUBLIC_URL", apiConfigPublicUrl);
+  const baseUrl = requiredEnv("API_CONFIG_PUBLIC_URL", apiConfigPublicUrl);
   const accessKey = requiredEnv("API_CONFIG_ACCESS_KEY", apiConfigAccessKey);
   const key = requiredEnv("API_CONFIG_PUBLIC_KEY", apiConfigPublicKey);
-  console.log("[serviceOrigins] request config host", { url });
-  const res = await fetchWithHttpDebug(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ access_key: accessKey, key }),
-  });
+  const requestUrl = new URL(baseUrl);
+  requestUrl.searchParams.set("access_key", accessKey);
+  requestUrl.searchParams.set("key", key);
+  console.log("[serviceOrigins] request config host", { url: baseUrl });
+  const res = await fetchWithHttpDebug(requestUrl.toString(), { method: "GET" });
   if (!res.ok) {
     throw new Error(`Config API failed: HTTP ${res.status}`);
   }
