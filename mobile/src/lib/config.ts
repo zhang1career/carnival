@@ -6,7 +6,7 @@ type Extra = {
   apiConfigAccessKey?: string;
   apiGatewayPort?: string;
   servFdPort?: string;
-  mallCdnBaseUrl?: string;
+  cdnDistributionId?: string;
   tokenRefreshIntervalMs?: number;
   features?: {
     commerce?: boolean;
@@ -27,7 +27,7 @@ export const apiConfigPublicKey = readTrimmed(extra.apiConfigPublicKey);
 export const apiConfigAccessKey = readTrimmed(extra.apiConfigAccessKey);
 export const apiGatewayPort = readTrimmed(extra.apiGatewayPort);
 export const servFdPort = readTrimmed(extra.servFdPort);
-export const mallCdnBaseUrlOverride = readTrimmed(extra.mallCdnBaseUrl);
+export const cdnDistributionId = readTrimmed(extra.cdnDistributionId);
 
 /** From `.env` `TOKEN_REFRESH_INTERVAL_MS` via `app.config.js`. Null disables periodic refresh. */
 export const tokenRefreshIntervalMs: number | null = (() => {

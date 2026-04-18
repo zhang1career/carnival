@@ -88,19 +88,26 @@ export async function fetchWithHttpDebug(input: RequestInfo | URL, init?: Reques
   const startedAt = Date.now();
   const url = readRequestUrl(input);
   const method = readRequestMethod(input, init);
-  const reqHeaders = sanitizeHeaders(init?.headers);
   const reqBody = requestBodyPreview(init?.body);
-
-  console.debug("[http] request", {
-    method,
-    url,
-    headers: reqHeaders,
-    ...(reqBody ? { body: reqBody } : {}),
-  });
+  if (method === "GET" && reqBody === undefined) {
+    console.debug("[http] request", { method, url });
+  } else {
+    const reqHeaders = sanitizeHeaders(init?.headers);
+    console.debug("[http] request", {
+      method,
+      url,
+      headers: reqHeaders,
+      ...(reqBody ? { body: reqBody } : {}),
+    });
+  }
 
   try {
     const res = await fetch(input, init);
     const durationMs = Date.now() - startedAt;
+    if (res.ok) {
+      console.debug("[http] response", { method, url, status: res.status, ok: true, durationMs });
+      return res;
+    }
     const resHeaders = sanitizeHeaders(res.headers);
     const resBody = await responseBodyPreview(res);
     console.debug("[http] response", {

@@ -2,7 +2,7 @@ import {
   apiConfigAccessKey,
   apiConfigPublicKey,
   apiConfigPublicUrl,
-  mallCdnBaseUrlOverride,
+  cdnDistributionId,
   servFdPort,
   apiGatewayPort,
 } from "@/lib/config";
@@ -31,6 +31,9 @@ let initPromise: Promise<ServiceOrigins> | null = null;
 let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 const HOST_REFRESH_INTERVAL_MS = 30 * 60 * 1000;
+
+/** Mall CDN path prefix on API gateway; distribution id from `CDN_DISTRIBUTION_ID`. */
+const MALL_CDN_PATH_PREFIX = "/api/cdn/2020-05-31/d";
 
 function requiredEnv(name: string, value: string): string {
   if (!value) {
@@ -72,12 +75,13 @@ async function createOrigins(): Promise<ServiceOrigins> {
   const host = await fetchConfigHost();
   const gatewayBase = toHttpOrigin(host, requiredEnv("API_GATEWAY_PORT", apiGatewayPort));
   const servFdBase = toHttpOrigin(host, requiredEnv("SERV_FD_PORT", servFdPort));
+  const cdnDist = requiredEnv("CDN_DISTRIBUTION_ID", cdnDistributionId);
   return {
     host,
     userAggBaseUrl: gatewayBase,
     mallAggBaseUrl: gatewayBase,
     servFdBaseUrl: servFdBase,
-    mallCdnBaseUrl: mallCdnBaseUrlOverride || `${servFdBase}/api/cdn/2020-05-31/d/1`,
+    mallCdnBaseUrl: `${gatewayBase}${MALL_CDN_PATH_PREFIX}/${cdnDist}`,
   };
 }
 
@@ -105,7 +109,6 @@ export function getServiceOriginsSync(): ServiceOrigins | null {
 
 export async function getServiceOrigins(): Promise<ServiceOrigins> {
   if (cachedOrigins) {
-    console.log("[serviceOrigins] use cached origins", { host: cachedOrigins.host });
     return cachedOrigins;
   }
   console.log("[serviceOrigins] cache miss, resolve origins");

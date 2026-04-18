@@ -72,7 +72,7 @@ module.exports = {
       apiConfigAccessKey: envTrim("API_CONFIG_ACCESS_KEY"),
       apiGatewayPort: envTrim("API_GATEWAY_PORT"),
       servFdPort: envTrim("SERV_FD_PORT"),
-      mallCdnBaseUrl: envTrim("MALL_CDN_BASE_URL"),
+      cdnDistributionId: envTrim("CDN_DISTRIBUTION_ID"),
       tokenRefreshIntervalMs: (() => {
         const raw = process.env.TOKEN_REFRESH_INTERVAL_MS;
         if (raw == null || String(raw).trim() === "") return undefined;
@@ -84,7 +84,8 @@ module.exports = {
         cart: true,
         orders: true,
       },
-      logLevel: envTrim("APP_LOG_LEVEL") ?? (process.env.NODE_ENV === "production" ? "info" : "debug"),
+      // Default `info`: verbose HTTP logging (`fetchWithHttpDebug` body reads) stays off unless you set `APP_LOG_LEVEL=debug`.
+      logLevel: envTrim("APP_LOG_LEVEL") ?? "info",
     },
   },
 };

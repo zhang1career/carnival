@@ -12,7 +12,7 @@ export function ProductCard({ product, onPress }: Props) {
     product.priceCents == null ? "—" : `$${(product.priceCents / 100).toFixed(2)}`;
   const thumbOrMain = product.thumbnail ?? product.mainMediaKeys?.[0];
   const uri = mallProductImageUri(thumbOrMain, product.imageUrl);
-  const logCdn = Boolean((typeof thumbOrMain === "string" ? thumbOrMain : "").trim());
+  const logCdnErrors = Boolean((typeof thumbOrMain === "string" ? thumbOrMain : "").trim());
   return (
     <Pressable
       onPress={onPress}
@@ -22,13 +22,8 @@ export function ProductCard({ product, onPress }: Props) {
         source={{ uri }}
         style={{ width: "100%", height: 144 }}
         resizeMode="cover"
-        onLoadStart={() => {
-          if (logCdn) {
-            console.log("[mall cdn] GET", uri);
-          }
-        }}
         onError={(e) => {
-          if (logCdn) {
+          if (logCdnErrors) {
             console.warn("[mall cdn] image error", uri, e.nativeEvent.error);
           }
         }}
