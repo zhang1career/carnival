@@ -50,11 +50,14 @@ async function fetchConfigHost(): Promise<string> {
   const baseUrl = requiredEnv("API_CONFIG_PUBLIC_URL", apiConfigPublicUrl);
   const accessKey = requiredEnv("API_CONFIG_ACCESS_KEY", apiConfigAccessKey);
   const key = requiredEnv("API_CONFIG_PUBLIC_KEY", apiConfigPublicKey);
-  const requestUrl = new URL(baseUrl);
-  requestUrl.searchParams.set("access_key", accessKey);
-  requestUrl.searchParams.set("key", key);
   console.log("[serviceOrigins] request config host", { url: baseUrl });
-  const res = await fetchWithHttpDebug(requestUrl.toString(), { method: "GET" });
+  const res = await fetchWithHttpDebug(baseUrl, {
+    method: "GET",
+    headers: {
+      "X-Config-Access-Key": accessKey,
+      "X-Config-Key": key,
+    },
+  });
   if (!res.ok) {
     throw new Error(`Config API failed: HTTP ${res.status}`);
   }

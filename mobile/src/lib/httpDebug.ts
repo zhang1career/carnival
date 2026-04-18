@@ -41,7 +41,10 @@ function sanitizeHeaders(headersRaw: HeadersInit | undefined): Record<string, st
   const headers = new Headers(headersRaw);
   const out: Record<string, string> = {};
   headers.forEach((value, key) => {
-    out[key] = key.toLowerCase() === "authorization" ? "[REDACTED]" : value;
+    const lower = key.toLowerCase();
+    const redacted =
+      lower === "authorization" || lower === "x-config-access-key" || lower === "x-config-key";
+    out[key] = redacted ? "[REDACTED]" : value;
   });
   return out;
 }
