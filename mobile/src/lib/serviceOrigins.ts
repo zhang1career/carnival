@@ -2,7 +2,6 @@ import {
   apiConfigAccessKey,
   apiConfigPublicKey,
   apiConfigPublicUrl,
-  mallAggPort,
   mallCdnBaseUrlOverride,
   servFdPort,
   apiGatewayPort,
@@ -71,13 +70,12 @@ async function fetchConfigHost(): Promise<string> {
 
 async function createOrigins(): Promise<ServiceOrigins> {
   const host = await fetchConfigHost();
-  const userBase = toHttpOrigin(host, requiredEnv("API_GATEWAY_PORT", apiGatewayPort));
-  const mallBase = toHttpOrigin(host, requiredEnv("MALL_AGG_PORT", mallAggPort));
+  const gatewayBase = toHttpOrigin(host, requiredEnv("API_GATEWAY_PORT", apiGatewayPort));
   const servFdBase = toHttpOrigin(host, requiredEnv("SERV_FD_PORT", servFdPort));
   return {
     host,
-    userAggBaseUrl: userBase,
-    mallAggBaseUrl: mallBase,
+    userAggBaseUrl: gatewayBase,
+    mallAggBaseUrl: gatewayBase,
     servFdBaseUrl: servFdBase,
     mallCdnBaseUrl: mallCdnBaseUrlOverride || `${servFdBase}/api/cdn/2020-05-31/d/1`,
   };

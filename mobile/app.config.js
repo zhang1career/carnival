@@ -71,7 +71,6 @@ module.exports = {
       apiConfigPublicKey: envTrim("API_CONFIG_PUBLIC_KEY"),
       apiConfigAccessKey: envTrim("API_CONFIG_ACCESS_KEY"),
       apiGatewayPort: envTrim("API_GATEWAY_PORT"),
-      mallAggPort: envTrim("MALL_AGG_PORT"),
       servFdPort: envTrim("SERV_FD_PORT"),
       mallCdnBaseUrl: envTrim("MALL_CDN_BASE_URL"),
       tokenRefreshIntervalMs: (() => {

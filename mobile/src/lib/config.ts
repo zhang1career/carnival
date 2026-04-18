@@ -5,7 +5,6 @@ type Extra = {
   apiConfigPublicKey?: string;
   apiConfigAccessKey?: string;
   apiGatewayPort?: string;
-  mallAggPort?: string;
   servFdPort?: string;
   mallCdnBaseUrl?: string;
   tokenRefreshIntervalMs?: number;
@@ -27,7 +26,6 @@ export const apiConfigPublicUrl = readTrimmed(extra.apiConfigPublicUrl);
 export const apiConfigPublicKey = readTrimmed(extra.apiConfigPublicKey);
 export const apiConfigAccessKey = readTrimmed(extra.apiConfigAccessKey);
 export const apiGatewayPort = readTrimmed(extra.apiGatewayPort);
-export const mallAggPort = readTrimmed(extra.mallAggPort);
 export const servFdPort = readTrimmed(extra.servFdPort);
 export const mallCdnBaseUrlOverride = readTrimmed(extra.mallCdnBaseUrl);
 
