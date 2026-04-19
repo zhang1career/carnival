@@ -6,12 +6,11 @@ import { Text, View } from "react-native";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { loginWithPassword } from "@/lib/api/login";
+import { applySession } from "@/lib/auth/sessionLifecycle";
 import { useToast } from "@/lib/notifications/toast";
-import { useAuthStore } from "@/stores/authStore";
 
 export default function LoginScreen() {
   const router = useRouter();
-  const signIn = useAuthStore((s) => s.signIn);
   const toast = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,7 +41,7 @@ export default function LoginScreen() {
           setSubmitting(true);
           try {
             const session = await loginWithPassword(email.trim(), password);
-            signIn(session);
+            await applySession(session);
             toast.show("Signed in");
             router.replace("/(app)/(tabs)");
           } catch (e) {

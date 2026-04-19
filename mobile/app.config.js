@@ -64,7 +64,7 @@ module.exports = {
       bundler: "metro",
       favicon: "./assets/images/favicon.png",
     },
-    plugins: ["expo-router", "./plugins/withIosEnvSyncPodfile.js"],
+    plugins: ["expo-router", "expo-secure-store", "./plugins/withIosEnvSyncPodfile.js"],
     extra: {
       router: { origin: false },
       apiConfigPublicUrl: envTrim("API_CONFIG_PUBLIC_URL"),

@@ -4,7 +4,7 @@
 
 ## 1. 登录态持久化与安全存储
 
-- `authStore` 仅在内存中保存 token，冷启动后需重新登录；需 **SecureStore（或等价）** 持久化方案，并单独设计 **refresh token** 的存放与轮换策略。
+- **已实现**：`expo-secure-store` 持久化 access + refresh；`AuthHydrationGate` 冷启动水合；`sessionLifecycle`（`applySession` / `clearSession`）；刷新成功后写回新 token（随后端双 token 返回与 rotation）。
 
 ## 2. 真实交易闭环：下单 API、支付、订单状态
 

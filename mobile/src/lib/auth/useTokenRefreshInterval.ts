@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { refreshSessionWithRefreshToken } from "@/lib/api/login";
+import { applySession, clearSession } from "@/lib/auth/sessionLifecycle";
 import { tokenRefreshIntervalMs } from "@/lib/config";
 import { useAuthStore } from "@/stores/authStore";
 
@@ -27,8 +28,6 @@ function isLikelyTransientNetworkError(err: unknown): boolean {
  */
 export function useTokenRefreshInterval() {
   const refreshToken = useAuthStore((s) => s.refreshToken);
-  const signIn = useAuthStore((s) => s.signIn);
-  const signOut = useAuthStore((s) => s.signOut);
   const inFlight = useRef(false);
 
   useEffect(() => {
@@ -46,12 +45,12 @@ export function useTokenRefreshInterval() {
         const session = await refreshSessionWithRefreshToken(rt, state.user);
         const after = useAuthStore.getState();
         if (after.refreshToken == null) return;
-        signIn(session);
+        await applySession(session);
       } catch (e) {
         if (isLikelyTransientNetworkError(e)) {
           return;
         }
-        signOut();
+        await clearSession();
       } finally {
         inFlight.current = false;
       }
@@ -59,5 +58,5 @@ export function useTokenRefreshInterval() {
 
     const id = setInterval(tick, tokenRefreshIntervalMs);
     return () => clearInterval(id);
-  }, [refreshToken, signIn, signOut]);
+  }, [refreshToken]);
 }

@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { VerificationCodeBottomSheet } from "@/components/ui/VerificationCodeBottomSheet";
 import { PendingVerificationError, registerAccount, verifyRegisterCode } from "@/lib/api/register";
+import { applySession } from "@/lib/auth/sessionLifecycle";
 import { useToast } from "@/lib/notifications/toast";
-import { useAuthStore } from "@/stores/authStore";
 
 const NOTICE_CHANNEL_EMAIL = "email";
 
@@ -17,7 +17,6 @@ const NAV_DELAY_MS = 280;
 
 export default function SignUpScreen() {
   const router = useRouter();
-  const signIn = useAuthStore((s) => s.signIn);
   const toast = useToast();
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -109,14 +108,16 @@ export default function SignUpScreen() {
           setPendingEventId(null);
           setVerifyOpen(false);
           setTimeout(() => {
-            if (session) {
-              signIn(session);
-              toast.show("Welcome!");
-              router.replace("/(app)/(tabs)");
-            } else {
-              toast.show("Account created. Please sign in.");
-              router.replace("/(auth)/login");
-            }
+            void (async () => {
+              if (session) {
+                await applySession(session);
+                toast.show("Welcome!");
+                router.replace("/(app)/(tabs)");
+              } else {
+                toast.show("Account created. Please sign in.");
+                router.replace("/(auth)/login");
+              }
+            })();
           }, NAV_DELAY_MS);
         }}
       />
