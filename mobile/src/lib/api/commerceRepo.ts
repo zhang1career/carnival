@@ -15,5 +15,7 @@ export type ProductListResult = {
 export type CommerceRepository = {
   listProducts: (params?: { page?: number; per_page?: number }) => Promise<ProductListResult>;
   getProduct: (id: string) => Promise<Product | null>;
+  /** Keyword search; returns product ids in result order (SearchRec / mall aggregate). */
+  searchProductIds: (query: string) => Promise<string[]>;
   listFeed: () => Promise<FeedItem[]>;
 };

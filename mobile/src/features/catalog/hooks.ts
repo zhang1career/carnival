@@ -1,5 +1,7 @@
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQueries, useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import { getCommerceRepo } from "@/lib/api";
+import type { Product } from "@/lib/api/types";
 
 const DEFAULT_PER_PAGE = 15;
 
@@ -33,4 +35,43 @@ export function useProductQuery(id: string, options?: { enabled?: boolean }) {
     queryFn: () => getCommerceRepo().getProduct(id),
     enabled: enabled && !!id,
   });
+}
+
+function dedupeIdsPreserveOrder(ids: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of ids) {
+    const id = raw?.trim();
+    if (!id || seen.has(id)) {
+      continue;
+    }
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+}
+
+/** Resolves each id via `getProduct`; order matches deduped id list; omits ids that return null. */
+export function useProductsByIdsQuery(ids: string[]) {
+  const deduped = useMemo(() => dedupeIdsPreserveOrder(ids), [ids]);
+  const results = useQueries({
+    queries: deduped.map((id) => ({
+      queryKey: ["product", id] as const,
+      queryFn: () => getCommerceRepo().getProduct(id),
+      enabled: deduped.length > 0,
+    })),
+  });
+  const isPending = deduped.length > 0 && results.some((r) => r.isPending);
+  const isError = results.some((r) => r.isError);
+  const products: Product[] = useMemo(() => {
+    const list: Product[] = [];
+    for (let i = 0; i < deduped.length; i++) {
+      const p = results[i]?.data;
+      if (p) {
+        list.push(p);
+      }
+    }
+    return list;
+  }, [deduped, results]);
+  return { products, deduped, isPending, isError };
 }

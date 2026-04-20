@@ -1,4 +1,4 @@
-import { mallCdnBaseUrl } from "@/lib/config";
+import { getServiceOriginsSync } from "@/lib/serviceOrigins";
 
 /** Full image URI: CDN path when `thumbnail` is set, otherwise `imageUrl`. */
 export function mallProductImageUri(thumbnail: string | undefined, imageUrl: string): string {
@@ -7,7 +7,7 @@ export function mallProductImageUri(thumbnail: string | undefined, imageUrl: str
     if (/^https?:\/\//i.test(t)) {
       return t;
     }
-    const base = mallCdnBaseUrl.replace(/\/$/, "");
+    const base = (getServiceOriginsSync()?.mallCdnBaseUrl ?? "").replace(/\/$/, "");
     if (base) {
       return `${base}/${t}`;
     }

@@ -76,6 +76,14 @@ export const mockCommerceRepository: CommerceRepository = {
   async getProduct(id: string) {
     return delay(products.find((p) => p.id === id) ?? null);
   },
+  async searchProductIds(query: string) {
+    const t = query.trim().toLowerCase();
+    if (!t) {
+      return delay([]);
+    }
+    const ids = products.filter((p) => p.title.toLowerCase().includes(t)).map((p) => p.id);
+    return delay(ids);
+  },
   async listFeed() {
     return delay([...feed]);
   },

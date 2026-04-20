@@ -9,6 +9,7 @@ export default function AppGroupLayout() {
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: "#0f172a" } }}>
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="product-list" />
       <Stack.Screen
         name="product/[id]"
         options={{ headerShown: true, title: "Product", headerBackTitle: "Back" }}
