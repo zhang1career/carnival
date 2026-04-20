@@ -1,5 +1,6 @@
 import type { CommerceRepository, ProductListResult } from "./commerceRepo";
 import { assertMallSuccess, readMallEnvelope, requireMallObjectData } from "./mallEnvelope";
+import { mallAggBearerHeaders } from "./mallAggHeaders";
 import { MALL_PRODUCTS_PATH, MALL_PRODUCTS_SEARCH_PATH, mallProductPath } from "./mallPaths";
 import { normalizeProductPagination } from "./mallPagination";
 import type { Product } from "./types";
@@ -63,7 +64,7 @@ async function fetchMallProductsPage(
   });
   const res = await fetchWithHttpDebug(`${base}${MALL_PRODUCTS_PATH}?${qs.toString()}`, {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: mallAggBearerHeaders(),
   });
   const env = await readMallEnvelope(res);
   if (!res.ok) {
@@ -132,10 +133,7 @@ async function postMallProductSearch(base: string, query: string): Promise<strin
   }
   const res = await fetchWithHttpDebug(`${base}${MALL_PRODUCTS_SEARCH_PATH}`, {
     method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
+    headers: mallAggBearerHeaders({ "Content-Type": "application/json" }),
     body: JSON.stringify({ query: trimmed }),
   });
   const env = await readMallEnvelope(res);
@@ -154,7 +152,7 @@ async function fetchMallProduct(base: string, id: string): Promise<Product | nul
   }
   const res = await fetchWithHttpDebug(`${base}${mallProductPath(numId)}`, {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: mallAggBearerHeaders(),
   });
   const env = await readMallEnvelope(res);
   if (res.status === 404) {

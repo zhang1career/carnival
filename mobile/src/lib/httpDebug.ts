@@ -34,6 +34,7 @@ function readRequestMethod(input: RequestInfo | URL, init?: RequestInit): string
   return (input.method || "GET").toUpperCase();
 }
 
+/** Strips only config API secrets; `Authorization` is logged as-is (enable only with `APP_LOG_LEVEL=debug`). */
 function sanitizeHeaders(headersRaw: HeadersInit | undefined): Record<string, string> {
   if (!headersRaw) {
     return {};
@@ -42,9 +43,11 @@ function sanitizeHeaders(headersRaw: HeadersInit | undefined): Record<string, st
   const out: Record<string, string> = {};
   headers.forEach((value, key) => {
     const lower = key.toLowerCase();
-    const redacted =
-      lower === "authorization" || lower === "x-config-access-key" || lower === "x-config-key";
-    out[key] = redacted ? "[REDACTED]" : value;
+    if (lower === "x-config-access-key" || lower === "x-config-key") {
+      out[key] = "[REDACTED]";
+      return;
+    }
+    out[key] = value;
   });
   return out;
 }
@@ -92,17 +95,13 @@ export async function fetchWithHttpDebug(input: RequestInfo | URL, init?: Reques
   const url = readRequestUrl(input);
   const method = readRequestMethod(input, init);
   const reqBody = requestBodyPreview(init?.body);
-  if (method === "GET" && reqBody === undefined) {
-    console.debug("[http] request", { method, url });
-  } else {
-    const reqHeaders = sanitizeHeaders(init?.headers);
-    console.debug("[http] request", {
-      method,
-      url,
-      headers: reqHeaders,
-      ...(reqBody ? { body: reqBody } : {}),
-    });
-  }
+  const reqHeaders = sanitizeHeaders(init?.headers);
+  console.debug("[http] request", {
+    method,
+    url,
+    headers: reqHeaders,
+    ...(reqBody ? { body: reqBody } : {}),
+  });
 
   try {
     const res = await fetch(input, init);

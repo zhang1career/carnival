@@ -1,3 +1,4 @@
+import { jsonBearerHeaders } from "./bearerRequestHeaders";
 import { assertMallSuccess, readMallEnvelope, requireMallObjectData } from "./mallEnvelope";
 import { MALL_ORDERS_PATH, mallOrderPath } from "./mallPaths";
 import { normalizeOrderPagination } from "./mallPagination";
@@ -8,13 +9,6 @@ import { getServiceOrigins } from "@/lib/serviceOrigins";
 async function mallBaseOrThrow(): Promise<string> {
   const { mallAggBaseUrl } = await getServiceOrigins();
   return mallAggBaseUrl.replace(/\/$/, "");
-}
-
-function authHeaders(accessToken: string): HeadersInit {
-  return {
-    Accept: "application/json",
-    Authorization: `Bearer ${accessToken}`,
-  };
 }
 
 function isOrderSummaryRow(row: unknown): row is Record<string, unknown> {
@@ -187,7 +181,7 @@ export async function fetchMallOrdersPage(
   });
   const res = await fetchWithHttpDebug(`${base}${MALL_ORDERS_PATH}?${qs.toString()}`, {
     method: "GET",
-    headers: authHeaders(accessToken),
+    headers: jsonBearerHeaders(accessToken),
   });
   const env = await readMallEnvelope(res);
   if (res.status === 401) {
@@ -233,10 +227,7 @@ export async function createMallOrder(
   const base = await mallBaseOrThrow();
   const res = await fetchWithHttpDebug(`${base}${MALL_ORDERS_PATH}`, {
     method: "POST",
-    headers: {
-      ...authHeaders(accessToken),
-      "Content-Type": "application/json",
-    },
+    headers: jsonBearerHeaders(accessToken, { "Content-Type": "application/json" }),
     body: JSON.stringify({ lines }),
   });
   const env = await readMallEnvelope(res);
@@ -259,7 +250,7 @@ export async function fetchMallOrder(accessToken: string, orderId: string): Prom
   }
   const res = await fetchWithHttpDebug(`${base}${mallOrderPath(numId)}`, {
     method: "GET",
-    headers: authHeaders(accessToken),
+    headers: jsonBearerHeaders(accessToken),
   });
   const env = await readMallEnvelope(res);
   if (res.status === 404) {
