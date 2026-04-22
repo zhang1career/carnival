@@ -8,8 +8,12 @@ export function mallProductPath(id: number): string {
   return `/api/mall-agg/products/${id}`;
 }
 
-export const MALL_ORDERS_PATH = "/api/mall/orders";
+export const MALL_ORDERS_PATH = "/api/mall-agg/orders";
 
 export function mallOrderPath(id: number): string {
-  return `/api/mall/orders/${id}`;
+  return `/api/mall-agg/orders/${id}`;
 }
+
+export const MALL_CHECKOUT_PATH = "/api/mall-agg/checkout";
+
+export const MALL_POINTS_PATH = "/api/mall-agg/points";

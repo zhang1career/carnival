@@ -10,6 +10,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@zhang1career/network": "^0.4.0",
     "@expo/vector-icons": "^14.0.4",
     "@react-navigation/native": "^6.1.18",
     "@tanstack/react-query": "^5.62.8",

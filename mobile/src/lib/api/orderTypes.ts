@@ -40,6 +40,10 @@ export type OrderSummary = {
 
 export type OrderDetail = OrderSummary & {
   lines: OrderLine[];
+  /** Present on coordinated checkout orders when API returns them. */
+  ext_inventory?: boolean;
+  checkout_phase?: number;
+  tid?: string;
 };
 
 export type OrderPagination = {

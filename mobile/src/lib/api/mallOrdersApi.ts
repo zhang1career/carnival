@@ -1,6 +1,19 @@
-import { jsonBearerHeaders } from "./bearerRequestHeaders";
-import { assertMallSuccess, readMallEnvelope, requireMallObjectData } from "./mallEnvelope";
-import { MALL_ORDERS_PATH, mallOrderPath } from "./mallPaths";
+import { wrapAsyncWithRateLimit } from "@zhang1career/network";
+import type { CheckoutResponseData, PointsBalanceData, PrepayStub } from "./checkoutTypes";
+import { mallAggBearerHeaders, mallAggJsonBearerHeaders } from "./mallAggHeaders";
+import {
+  assertMallSuccess,
+  assertMallSuccessHttp,
+  MallApiError,
+  readMallEnvelope,
+  requireMallObjectData,
+} from "./mallEnvelope";
+import {
+  MALL_CHECKOUT_PATH,
+  MALL_ORDERS_PATH,
+  MALL_POINTS_PATH,
+  mallOrderPath,
+} from "./mallPaths";
 import { normalizeOrderPagination } from "./mallPagination";
 import type { OrderDetail, OrderListResult, OrderStatus, OrderSummary } from "./orderTypes";
 import { fetchWithHttpDebug } from "@/lib/httpDebug";
@@ -29,6 +42,29 @@ function mallFiniteInt(value: unknown): number | null {
     return Number.isFinite(n) ? n : null;
   }
   return null;
+}
+
+/**
+ * Some gateways wrap the resource once more: `data: { data: { balance_minor } }`.
+ */
+function pointsBalanceMinorFromDataPayload(root: Record<string, unknown>): number {
+  const read = (slice: Record<string, unknown>): number | null => {
+    const bal = mallFiniteInt(slice.balance_minor ?? slice.balanceMinor);
+    return bal !== null && bal >= 0 ? bal : null;
+  };
+
+  const top = read(root);
+  if (top !== null) {
+    return top;
+  }
+  const inner = root.data;
+  if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+    const nested = read(inner as Record<string, unknown>);
+    if (nested !== null) {
+      return nested;
+    }
+  }
+  return 0;
 }
 
 function mallFiniteNumber(value: unknown): number | null {
@@ -158,6 +194,25 @@ function toOrderLine(row: unknown): OrderDetail["lines"][number] {
   };
 }
 
+function coordinatorExtras(data: Record<string, unknown>): Pick<
+  OrderDetail,
+  "ext_inventory" | "checkout_phase" | "tid"
+> {
+  const out: Pick<OrderDetail, "ext_inventory" | "checkout_phase" | "tid"> = {};
+  const ext = data.ext_inventory;
+  if (typeof ext === "boolean") {
+    out.ext_inventory = ext;
+  }
+  const phase = mallFiniteInt(data.checkout_phase);
+  if (phase !== null) {
+    out.checkout_phase = phase;
+  }
+  if (typeof data.tid === "string") {
+    out.tid = data.tid;
+  }
+  return out;
+}
+
 function toOrderDetail(data: Record<string, unknown>): OrderDetail {
   const base = toOrderSummary(data);
   const linesRaw = data.lines;
@@ -165,13 +220,46 @@ function toOrderDetail(data: Record<string, unknown>): OrderDetail {
     throw new Error("Malformed order detail");
   }
   const lines = linesRaw.map(toOrderLine);
-  return { ...base, lines };
+  return { ...base, lines, ...coordinatorExtras(data) };
 }
 
-export async function fetchMallOrdersPage(
-  accessToken: string,
-  params?: { page?: number; per_page?: number },
-): Promise<OrderListResult> {
+function toPrepayStub(raw: Record<string, unknown>): PrepayStub {
+  const order_id = mallFiniteInt(raw.order_id) ?? 0;
+  const amount_minor = mallFiniteInt(raw.amount_minor) ?? 0;
+  const uid = mallFiniteInt(raw.uid) ?? 0;
+  const statusRaw = raw.status;
+  const status =
+    typeof statusRaw === "string" ? statusRaw : statusRaw == null ? "" : String(statusRaw);
+  return { order_id, amount_minor, uid, status };
+}
+
+function parseCheckoutResponseData(data: Record<string, unknown>): CheckoutResponseData {
+  const orderRaw = data.order;
+  if (!orderRaw || typeof orderRaw !== "object" || Array.isArray(orderRaw)) {
+    throw new Error("Malformed checkout: order");
+  }
+  const order = toOrderDetail(orderRaw as Record<string, unknown>);
+  const prepayRaw = data.prepay;
+  if (!prepayRaw || typeof prepayRaw !== "object" || Array.isArray(prepayRaw)) {
+    throw new Error("Malformed checkout: prepay");
+  }
+  const prepay = toPrepayStub(prepayRaw as Record<string, unknown>);
+  const pointsKey = data.points_tcc_idem_key;
+  const points_tcc_idem_key =
+    pointsKey === null || pointsKey === undefined
+      ? null
+      : typeof pointsKey === "string"
+        ? pointsKey
+        : null;
+  const tidTop = typeof data.tid === "string" ? data.tid : "";
+  const tid = tidTop || order.tid || "";
+  return { order, prepay, points_tcc_idem_key, tid };
+}
+
+export async function fetchMallOrdersPage(params?: {
+  page?: number;
+  per_page?: number;
+}): Promise<OrderListResult> {
   const base = await mallBaseOrThrow();
   const page = params?.page ?? 1;
   const perPage = params?.per_page ?? 15;
@@ -181,7 +269,7 @@ export async function fetchMallOrdersPage(
   });
   const res = await fetchWithHttpDebug(`${base}${MALL_ORDERS_PATH}?${qs.toString()}`, {
     method: "GET",
-    headers: jsonBearerHeaders(accessToken),
+    headers: mallAggBearerHeaders(),
   });
   const env = await readMallEnvelope(res);
   if (res.status === 401) {
@@ -207,42 +295,128 @@ export async function fetchMallOrdersPage(
 export type CreateMallOrderLine = {
   product_id: number;
   quantity: number;
-  unit_price: number;
 };
 
-function parseCreatedOrderId(data: Record<string, unknown>): number {
-  const row = mallOrderRowFromDetailData(data);
-  const id = mallFiniteInt(row.id);
-  if (id === null) {
-    throw new Error("Create order response missing order id");
-  }
-  return id;
-}
+export type CheckoutMallLine = CreateMallOrderLine;
 
-/** `POST /api/mall/orders` with JSON body `{ lines: [{ product_id, quantity, unit_price }] }`. */
-export async function createMallOrder(
-  accessToken: string,
-  lines: CreateMallOrderLine[],
-): Promise<number> {
+/** `POST /api/mall-agg/orders` with JSON body `{ lines: [{ product_id, quantity }] }`. */
+export async function createMallOrder(lines: CreateMallOrderLine[]): Promise<OrderDetail> {
   const base = await mallBaseOrThrow();
   const res = await fetchWithHttpDebug(`${base}${MALL_ORDERS_PATH}`, {
     method: "POST",
-    headers: jsonBearerHeaders(accessToken, { "Content-Type": "application/json" }),
+    headers: mallAggJsonBearerHeaders(),
     body: JSON.stringify({ lines }),
   });
   const env = await readMallEnvelope(res);
   if (res.status === 401) {
     throw new Error(env.message?.trim() || "Unauthorized");
   }
+  assertMallSuccessHttp(env, res.status);
   if (!res.ok) {
-    throw new Error(env.message?.trim() || `HTTP ${res.status}`);
+    throw new MallApiError(
+      env.message?.trim() || `HTTP ${res.status}`,
+      env.errorCode,
+      res.status,
+    );
   }
-  assertMallSuccess(env);
   const data = requireMallObjectData(env);
-  return parseCreatedOrderId(data);
+  const row = mallOrderRowFromDetailData(data);
+  const linesRaw = Array.isArray(row.lines) ? row.lines : data.lines;
+  if (!Array.isArray(linesRaw)) {
+    throw new Error("Malformed create order response");
+  }
+  const merged: Record<string, unknown> = { ...data, ...row, lines: linesRaw };
+  return toOrderDetail(merged);
 }
 
-export async function fetchMallOrder(accessToken: string, orderId: string): Promise<OrderDetail | null> {
+export async function checkoutMall(input: {
+  lines: CheckoutMallLine[];
+  points_minor?: number;
+}): Promise<CheckoutResponseData> {
+  const base = await mallBaseOrThrow();
+  const body: Record<string, unknown> = { lines: input.lines };
+  const pm = input.points_minor;
+  if (pm !== undefined && pm > 0) {
+    body.points_minor = pm;
+  }
+  const res = await fetchWithHttpDebug(`${base}${MALL_CHECKOUT_PATH}`, {
+    method: "POST",
+    headers: mallAggJsonBearerHeaders(),
+    body: JSON.stringify(body),
+  });
+  const env = await readMallEnvelope(res);
+  if (res.status === 401) {
+    throw new Error(env.message?.trim() || "Unauthorized");
+  }
+  assertMallSuccessHttp(env, res.status);
+  if (!res.ok) {
+    throw new MallApiError(
+      env.message?.trim() || `HTTP ${res.status}`,
+      env.errorCode,
+      res.status,
+    );
+  }
+  const data = requireMallObjectData(env);
+  return parseCheckoutResponseData(data);
+}
+
+async function fetchMallPointsBalanceUncapped(): Promise<PointsBalanceData> {
+  const base = await mallBaseOrThrow();
+  const res = await fetchWithHttpDebug(`${base}${MALL_POINTS_PATH}`, {
+    method: "GET",
+    headers: mallAggBearerHeaders(),
+  });
+  const env = await readMallEnvelope(res);
+  if (res.status === 401) {
+    throw new Error(env.message?.trim() || "Unauthorized");
+  }
+  assertMallSuccessHttp(env, res.status);
+  // Do not gate on `res.ok` here: some gateways return non-2xx while still echoing a
+  // valid ApiEnvelope in the body. Business outcome is `errorCode` + `data` only.
+  const data = requireMallObjectData(env);
+  return { balance_minor: pointsBalanceMinorFromDataPayload(data) };
+}
+
+/** GET `/api/mall-agg/points` — sliding-window cap via `@zhang1career/network`. */
+export const fetchMallPointsBalance = wrapAsyncWithRateLimit(
+  fetchMallPointsBalanceUncapped,
+  { windowMs: 60_000, maxCalls: 30, strategy: "wait" },
+  "mall-agg/points",
+);
+
+export async function patchMallOrder(
+  orderId: number,
+  body: { status: number | string },
+): Promise<OrderDetail> {
+  const base = await mallBaseOrThrow();
+  const res = await fetchWithHttpDebug(`${base}${mallOrderPath(orderId)}`, {
+    method: "PATCH",
+    headers: mallAggJsonBearerHeaders(),
+    body: JSON.stringify(body),
+  });
+  const env = await readMallEnvelope(res);
+  if (res.status === 401) {
+    throw new Error(env.message?.trim() || "Unauthorized");
+  }
+  assertMallSuccessHttp(env, res.status);
+  if (!res.ok) {
+    throw new MallApiError(
+      env.message?.trim() || `HTTP ${res.status}`,
+      env.errorCode,
+      res.status,
+    );
+  }
+  const data = requireMallObjectData(env);
+  const row = mallOrderRowFromDetailData(data);
+  const linesRaw = Array.isArray(row.lines) ? row.lines : data.lines;
+  if (!Array.isArray(linesRaw)) {
+    throw new Error("Malformed patch order response");
+  }
+  const merged: Record<string, unknown> = { ...data, ...row, lines: linesRaw };
+  return toOrderDetail(merged);
+}
+
+export async function fetchMallOrder(orderId: string): Promise<OrderDetail | null> {
   const base = await mallBaseOrThrow();
   const numId = Number.parseInt(orderId, 10);
   if (!Number.isFinite(numId) || numId < 1) {
@@ -250,7 +424,7 @@ export async function fetchMallOrder(accessToken: string, orderId: string): Prom
   }
   const res = await fetchWithHttpDebug(`${base}${mallOrderPath(numId)}`, {
     method: "GET",
-    headers: jsonBearerHeaders(accessToken),
+    headers: mallAggBearerHeaders(),
   });
   const env = await readMallEnvelope(res);
   if (res.status === 404) {
@@ -269,5 +443,6 @@ export async function fetchMallOrder(accessToken: string, orderId: string): Prom
   if (!Array.isArray(linesRaw)) {
     throw new Error("Malformed order detail");
   }
-  return toOrderDetail({ ...row, lines: linesRaw });
+  const merged: Record<string, unknown> = { ...data, ...row, lines: linesRaw };
+  return toOrderDetail(merged);
 }

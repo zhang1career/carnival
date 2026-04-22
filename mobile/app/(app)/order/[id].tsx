@@ -9,6 +9,7 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProductQuery } from "@/features/catalog/hooks";
 import { useOrderQuery } from "@/features/orders/hooks";
+import type { PrepayStub } from "@/lib/api/checkoutTypes";
 import { mallProductImageUri } from "@/lib/mallCdn";
 import { orderStatusLabel, type OrderLine } from "@/lib/api/orderTypes";
 
@@ -24,6 +25,38 @@ function formatTime(sec: number): string {
     return new Date(sec * 1000).toLocaleString();
   } catch {
     return String(sec);
+  }
+}
+
+function parsePrepayStubParam(raw: string | undefined): PrepayStub | null {
+  if (raw == null || raw === "") {
+    return null;
+  }
+  try {
+    const decoded = decodeURIComponent(raw);
+    const o = JSON.parse(decoded) as unknown;
+    if (!o || typeof o !== "object" || Array.isArray(o)) {
+      return null;
+    }
+    const r = o as Record<string, unknown>;
+    const order_id =
+      typeof r.order_id === "number" && Number.isFinite(r.order_id)
+        ? Math.trunc(r.order_id)
+        : Number.parseInt(String(r.order_id ?? ""), 10) || 0;
+    const amount_minor =
+      typeof r.amount_minor === "number" && Number.isFinite(r.amount_minor)
+        ? Math.trunc(r.amount_minor)
+        : Number.parseInt(String(r.amount_minor ?? ""), 10) || 0;
+    const uid =
+      typeof r.uid === "number" && Number.isFinite(r.uid)
+        ? Math.trunc(r.uid)
+        : Number.parseInt(String(r.uid ?? ""), 10) || 0;
+    const statusRaw = r.status;
+    const status =
+      typeof statusRaw === "string" ? statusRaw : statusRaw == null ? "" : String(statusRaw);
+    return { order_id, amount_minor, uid, status };
+  } catch {
+    return null;
   }
 }
 
@@ -77,10 +110,21 @@ function OrderLineRow({ line }: { line: OrderLine }) {
 }
 
 export default function OrderDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; prepayJson?: string }>();
+  const { id } = params;
+  const prepayJsonRaw = params.prepayJson;
+  const prepayJson = Array.isArray(prepayJsonRaw) ? prepayJsonRaw[0] : prepayJsonRaw;
+  const prepayStub = parsePrepayStubParam(prepayJson);
+
   const insets = useSafeAreaInsets();
   const { data: order, isPending, isError, error, isSuccess } = useOrderQuery(id ?? "");
   const bottomPad = insets.bottom + SCROLL_BOTTOM_EXTRA;
+
+  const showCoordinatorMeta =
+    order &&
+    (order.ext_inventory !== undefined ||
+      order.checkout_phase !== undefined ||
+      (order.tid !== undefined && order.tid !== ""));
 
   if (isPending) {
     return (
@@ -131,6 +175,32 @@ export default function OrderDetailScreen() {
       <Text className="text-brand-muted text-lg mt-2">{formatMinor(order.total_price)}</Text>
       <Text className="text-slate-500 text-sm mt-4">Created: {formatTime(order.ct)}</Text>
       <Text className="text-slate-500 text-sm">Updated: {formatTime(order.ut)}</Text>
+
+      {showCoordinatorMeta ? (
+        <View className="mt-6 pt-4 border-t border-surface-border gap-1">
+          <Text className="text-slate-400 text-sm font-semibold">Checkout (coordinator)</Text>
+          {order.ext_inventory !== undefined ? (
+            <Text className="text-slate-500 text-xs">ext_inventory: {String(order.ext_inventory)}</Text>
+          ) : null}
+          {order.checkout_phase !== undefined ? (
+            <Text className="text-slate-500 text-xs">checkout_phase: {order.checkout_phase}</Text>
+          ) : null}
+          {order.tid !== undefined && order.tid !== "" ? (
+            <Text className="text-slate-500 text-xs" selectable>
+              tid: {order.tid}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
+
+      {prepayStub ? (
+        <View className="mt-6 pt-4 border-t border-surface-border gap-1">
+          <Text className="text-slate-400 text-sm font-semibold">预支付（占位）</Text>
+          <Text className="text-slate-500 text-xs">status: {prepayStub.status || "—"}</Text>
+          <Text className="text-slate-500 text-xs">amount: {formatMinor(prepayStub.amount_minor)}</Text>
+          <Text className="text-slate-500 text-xs">order_id: {prepayStub.order_id}</Text>
+        </View>
+      ) : null}
     </ScrollView>
   );
 }

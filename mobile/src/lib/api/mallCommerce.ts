@@ -1,6 +1,6 @@
 import type { CommerceRepository, ProductListResult } from "./commerceRepo";
 import { assertMallSuccess, readMallEnvelope, requireMallObjectData } from "./mallEnvelope";
-import { mallAggBearerHeaders } from "./mallAggHeaders";
+import { mallAggBearerHeaders, mallAggJsonBearerHeaders } from "./mallAggHeaders";
 import { MALL_PRODUCTS_PATH, MALL_PRODUCTS_SEARCH_PATH, mallProductPath } from "./mallPaths";
 import { normalizeProductPagination } from "./mallPagination";
 import type { Product } from "./types";
@@ -133,7 +133,7 @@ async function postMallProductSearch(base: string, query: string): Promise<strin
   }
   const res = await fetchWithHttpDebug(`${base}${MALL_PRODUCTS_SEARCH_PATH}`, {
     method: "POST",
-    headers: mallAggBearerHeaders({ "Content-Type": "application/json" }),
+    headers: mallAggJsonBearerHeaders(),
     body: JSON.stringify({ query: trimmed }),
   });
   const env = await readMallEnvelope(res);
