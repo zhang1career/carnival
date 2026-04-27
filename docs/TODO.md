@@ -41,7 +41,7 @@
 
 ## 10. iOS App Store 上架前：收紧 ATS（明文 HTTP 例外）
 
-开发/联调时可在仓库根 `.env` 设置 **`IOS_ATS_INSECURE_HTTP_DOMAINS`**（逗号分隔的主机名或 IP，无空格或按需 trim），由 `mobile/ios/scripts/sync-ios-ats-insecure-domains.sh` 写入 `NSAppTransportSecurity` → `NSExceptionDomains` → **`NSExceptionAllowsInsecureHTTPLoads`**，并由 `app.config.js` 中的 `withIosAtsInsecureHttp` 在 **`expo prebuild`** 时保持一致。
+开发/联调时设置 **`IOS_ATS_INSECURE_HTTP_DOMAINS`**（逗号分隔的主机名或 IP；与 `mobile/app.config.js` 一致：可放在仓库根 **`.env`**，或放在 **`.env.dev` / `.env.test` / `.env.prod`** 中覆盖；后者要求根目录 **`.env`** 里已有 **`RUN_ENV=dev|test|prod`**，否则不会合并环境文件）。由 `mobile/ios/scripts/sync-ios-ats-insecure-domains.sh` 写入 `NSAppTransportSecurity` → `NSExceptionDomains` → **`NSExceptionAllowsInsecureHTTPLoads`**，并由 `app.config.js` 中的 `withIosAtsInsecureHttp` 在 **`expo prebuild`** 时保持一致。
 
 **发版到 App Store 前必须做：**
 

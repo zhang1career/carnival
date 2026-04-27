@@ -349,37 +349,71 @@ if [ "$EXPORT_METHOD" = "app-store-connect" ]; then
     log_info "准备上传到 App Store Connect..."
     echo ""
     
-    # 从 .env / .env.local 读 APPLE_ID 与 APP_SPECIFIC_PASSWORD
-    # 顺序：基线 .env 优先读入，后序 .env.local 可覆盖；同一键以后出现的文件与行为准
-    load_app_store_credentials_from_env_files() {
-        for env_file in \
-            "$REPO_ROOT/.env" \
-            "$MOBILE_DIR/.env" \
-            "$REPO_ROOT/.env.local" \
-            "$MOBILE_DIR/.env.local" \
-            "$IOS_DIR/.env.local" \
-            "$IOS_DIR/.env"
-        do
-            if [ -f "$env_file" ]; then
-                while IFS='=' read -r key value || [ -n "$key" ]; do
-                    [[ "$key" =~ ^[[:space:]]*# ]] && continue
-                    [[ -z "$key" ]] && continue
-                    key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//;s/^export[[:space:]]*//')
-                    value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed "s/^['\"]//;s/['\"]$//")
-                    if [ "$key" = "APPLE_ID" ]; then
-                        APPLE_ID="$value"
-                    elif [ "$key" = "APP_SPECIFIC_PASSWORD" ]; then
-                        APP_SPECIFIC_PASSWORD="$value"
-                    fi
-                done < "$env_file"
-            fi
-        done
-    }
-    
+    # 与 mobile/app.config.js、sync-ios-ats-insecure-domains.sh 一致：
+    # 1) 仓库根 .env
+    # 2) 若 RUN_ENV 为 dev|test|prod，再合并 .env.${RUN_ENV}（覆盖同名键；RUN_ENV 只认 .env 里的值）
+    # 当前 shell 已 export 的 APPLE_ID / APP_SPECIFIC_PASSWORD 优先，不覆盖
     if [ -z "$APPLE_ID" ] || [ -z "$APP_SPECIFIC_PASSWORD" ]; then
-        load_app_store_credentials_from_env_files
+        eval "$(
+            python3 - "$REPO_ROOT" <<'PY'
+import os
+import shlex
+import sys
+from pathlib import Path
+from typing import Dict, List
+
+
+def parse_env_file(path: Path) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    if not path.is_file():
+        return out
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        s = line.strip()
+        if not s or s.startswith("#"):
+            continue
+        if "=" not in s:
+            continue
+        k, v = s.split("=", 1)
+        k, v = k.strip(), v.strip()
+        if v and v[0] in "\"'":
+            q = v[0]
+            v = v[1:].rstrip()
+            if v.endswith(q):
+                v = v[:-1]
+        if k:
+            out[k] = v
+    return out
+
+
+def load_merged_env(root: Path) -> Dict[str, str]:
+    base = parse_env_file(root / ".env")
+    run = base.get("RUN_ENV", "").strip()
+    if run in ("dev", "test", "prod"):
+        overlay = parse_env_file(root / f".env.{run}")
+        return {**base, **overlay}
+    return base
+
+
+def need(name: str) -> bool:
+    return not (os.environ.get(name, "") or "").strip()
+
+
+repo_root = Path(sys.argv[1])
+merged = load_merged_env(repo_root)
+lines: List[str] = []
+if need("APPLE_ID"):
+    v = (merged.get("APPLE_ID") or "").strip()
+    if v:
+        lines.append("export APPLE_ID=" + shlex.quote(v))
+if need("APP_SPECIFIC_PASSWORD"):
+    v = (merged.get("APP_SPECIFIC_PASSWORD") or "").strip()
+    if v:
+        lines.append("export APP_SPECIFIC_PASSWORD=" + shlex.quote(v))
+print("\n".join(lines))
+PY
+        )"
         if [ -n "$APPLE_ID" ] && [ -n "$APP_SPECIFIC_PASSWORD" ]; then
-            log_info "已从 .env / .env.local 加载 App Store 上传凭据"
+            log_info "已从仓库根 .env 与 .env.<RUN_ENV> 合并凭据（与 app.config.js 一致）"
         fi
     fi
     
@@ -444,7 +478,7 @@ if [ "$EXPORT_METHOD" = "app-store-connect" ]; then
         echo ""
         log_info "配置自动上传（按优先级）:"
         echo "  1. 环境变量（用于 CI/CD）"
-        echo "  2. 仓库或 mobile/ 下 .env 与 .env.local（.env.local 可覆盖 .env；勿提交含密钥的提交物）"
+        echo "  2. 仓库根 .env 与 RUN_ENV 对应的 .env.dev|.env.test|.env.prod（合并方式同 app.config.js）"
         echo "  3. 交互式输入（仅终端为 TTY 时）"
     fi
 else
