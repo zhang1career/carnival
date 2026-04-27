@@ -40,6 +40,10 @@ export type OrderSummary = {
 
 export type OrderDetail = OrderSummary & {
   lines: OrderLine[];
+  /** Set after `POST /api/mall/checkout`; `0` before checkout. */
+  points_deduct_minor: number;
+  /** Cash to pay via third party; `0` before checkout. */
+  cash_payable_minor: number;
   /** Present on coordinated checkout orders when API returns them. */
   ext_inventory?: boolean;
   checkout_phase?: number;

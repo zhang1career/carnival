@@ -24,6 +24,16 @@ function envTrim(name) {
   return String(v).trim();
 }
 
+/** Comma-separated hostnames/IPs for NSExceptionDomains (cleartext HTTP); see docs/TODO.md. */
+function parseIosAtsInsecureHttpDomains() {
+  const raw = envTrim("IOS_ATS_INSECURE_HTTP_DOMAINS");
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 const APP_DISPLAY_NAME = envTrim("APP_DISPLAY_NAME");
 const APP_VERSION = envTrim("APP_VERSION");
 const APP_MODULE_NAME = envTrim("APP_MODULE_NAME");
@@ -64,7 +74,12 @@ module.exports = {
       bundler: "metro",
       favicon: "./assets/images/favicon.png",
     },
-    plugins: ["expo-router", "expo-secure-store", "./plugins/withIosEnvSyncPodfile.js"],
+    plugins: [
+      "expo-router",
+      "expo-secure-store",
+      "./plugins/withIosEnvSyncPodfile.js",
+      ["./plugins/withIosAtsInsecureHttp.js", { domains: parseIosAtsInsecureHttpDomains() }],
+    ],
     extra: {
       router: { origin: false },
       apiConfigPublicUrl: envTrim("API_CONFIG_PUBLIC_URL"),

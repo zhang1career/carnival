@@ -4,7 +4,7 @@ export type PointsBalanceData = {
   balance_minor: number;
 };
 
-/** Placeholder prepay payload from `POST /api/mall-agg/checkout` (`StubPaymentOutboundClient`). */
+/** Placeholder prepay payload from `POST /api/mall/checkout` (`StubPaymentOutboundClient`). */
 export type PrepayStub = {
   order_id: number;
   amount_minor: number;

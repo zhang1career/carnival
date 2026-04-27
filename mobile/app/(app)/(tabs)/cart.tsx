@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useMallPointsBalanceQuery } from "@/features/orders/hooks";
-import { checkoutMall } from "@/lib/api/mallOrdersApi";
+import { checkoutMall, createMallOrder } from "@/lib/api/mallOrdersApi";
 import { MallApiError } from "@/lib/api/mallEnvelope";
 import { getCommerceRepo } from "@/lib/api/index";
 import { features } from "@/lib/config";
@@ -106,7 +106,8 @@ export default function CartScreen() {
         }
       }
       const points_minor = parsePointsMinorInput(pointsInput, balanceMinor);
-      return checkoutMall({ lines: body, points_minor });
+      const order = await createMallOrder(body);
+      return checkoutMall({ order_id: order.id, points_minor });
     },
     onSuccess: (result) => {
       clear();

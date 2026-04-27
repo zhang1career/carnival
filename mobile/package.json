@@ -5,6 +5,9 @@
   "scripts": {
     "start": "expo start",
     "prebuild:ios": "bash ios/scripts/prebuild.sh",
+    "archive:ios": "bash ios/scripts/prebuild.sh && bash ios/scripts/xcode-archive.sh",
+    "upload:ios": "bash ios/scripts/xcode-upload.sh",
+    "archive-and-upload:ios": "bash ios/scripts/xcode-clean.sh && bash ios/scripts/prebuild.sh && bash ios/scripts/xcode-archive.sh && bash ios/scripts/xcode-upload.sh",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web"

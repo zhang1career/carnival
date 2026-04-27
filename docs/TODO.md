@@ -39,6 +39,16 @@
 
 - 环境说明、CI（lint/类型/构建）、关键路径 **E2E**、崩溃与性能监控等与现网运维衔接。
 
+## 10. iOS App Store 上架前：收紧 ATS（明文 HTTP 例外）
+
+开发/联调时可在仓库根 `.env` 设置 **`IOS_ATS_INSECURE_HTTP_DOMAINS`**（逗号分隔的主机名或 IP，无空格或按需 trim），由 `mobile/ios/scripts/sync-ios-ats-insecure-domains.sh` 写入 `NSAppTransportSecurity` → `NSExceptionDomains` → **`NSExceptionAllowsInsecureHTTPLoads`**，并由 `app.config.js` 中的 `withIosAtsInsecureHttp` 在 **`expo prebuild`** 时保持一致。
+
+**发版到 App Store 前必须做：**
+
+1. 在生产/发版用环境中 **删除或置空** `IOS_ATS_INSECURE_HTTP_DOMAINS`，然后执行 `pod install`（会跑 `sync-ios-metadata-from-env.sh` 链式同步）或单独运行 `mobile/ios/scripts/sync-ios-ats-insecure-domains.sh`，确认 **`Info.plist` 中不再包含** `NSExceptionDomains` 下的不安全 HTTP 例外（空变量会 **移除** 该节）。
+2. 对外 API 与资源 **改走 HTTPS**（含网关、配置与 CDN 拉取等）；对不可信网络避免长期依赖例外域名。
+3. 若确需对极少数域保留例外，在发版前 **复审** 每个 `NSExceptionDomain` 是否仍必要，并记录业务与安全评审结论；默认目标应为 **零** 或仅在受控内网 build 中启用。
+
 ---
 
 ## Auth / session（已有说明）

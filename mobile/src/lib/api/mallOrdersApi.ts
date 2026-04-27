@@ -220,7 +220,19 @@ function toOrderDetail(data: Record<string, unknown>): OrderDetail {
     throw new Error("Malformed order detail");
   }
   const lines = linesRaw.map(toOrderLine);
-  return { ...base, lines, ...coordinatorExtras(data) };
+  const points_deduct_raw = mallFiniteInt(data.points_deduct_minor);
+  const cash_payable_raw = mallFiniteInt(data.cash_payable_minor);
+  const points_deduct_minor =
+    points_deduct_raw !== null && points_deduct_raw >= 0 ? points_deduct_raw : 0;
+  const cash_payable_minor =
+    cash_payable_raw !== null && cash_payable_raw >= 0 ? cash_payable_raw : 0;
+  return {
+    ...base,
+    lines,
+    points_deduct_minor,
+    cash_payable_minor,
+    ...coordinatorExtras(data),
+  };
 }
 
 function toPrepayStub(raw: Record<string, unknown>): PrepayStub {
@@ -297,8 +309,6 @@ export type CreateMallOrderLine = {
   quantity: number;
 };
 
-export type CheckoutMallLine = CreateMallOrderLine;
-
 /** `POST /api/mall-agg/orders` with JSON body `{ lines: [{ product_id, quantity }] }`. */
 export async function createMallOrder(lines: CreateMallOrderLine[]): Promise<OrderDetail> {
   const base = await mallBaseOrThrow();
@@ -329,12 +339,16 @@ export async function createMallOrder(lines: CreateMallOrderLine[]): Promise<Ord
   return toOrderDetail(merged);
 }
 
+/**
+ * Second step: `POST /api/mall-agg/checkout` with `{ order_id, points_minor? }`.
+ * Call after `createMallOrder`. Same `points_minor` as stored may be used to refresh `prepay`.
+ */
 export async function checkoutMall(input: {
-  lines: CheckoutMallLine[];
+  order_id: number;
   points_minor?: number;
 }): Promise<CheckoutResponseData> {
   const base = await mallBaseOrThrow();
-  const body: Record<string, unknown> = { lines: input.lines };
+  const body: Record<string, unknown> = { order_id: input.order_id };
   const pm = input.points_minor;
   if (pm !== undefined && pm > 0) {
     body.points_minor = pm;

@@ -125,3 +125,11 @@ else
 fi
 
 rm -f "${PBXPROJ_BAK}"
+
+SYNC_ATS="${IOS_DIR}/scripts/sync-ios-ats-insecure-domains.sh"
+if [[ -f "${SYNC_ATS}" ]]; then
+  bash "${SYNC_ATS}" || {
+    echo "[.env] sync-ios-ats-insecure-domains.sh failed" >&2
+    exit 1
+  }
+fi
